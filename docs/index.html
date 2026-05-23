@@ -333,7 +333,7 @@
   <div class="conf-pills" id="ts-view-pills"></div>
   <div class="controls">
     <select id="team-select"><option value="">- Select a team -</option></select>
-    <select id="season-select" style="display:none"><option value="all">All seasons</option></select>
+    <select id="season-select" style="display:none"></select>
     <select id="date-type-select" style="display:none">
       <option value="eos">End of playoffs</option>
       <option value="eor">End of regular season</option>
@@ -741,12 +741,15 @@ async function loadTeam(slug) {
   const data = teamCache[slug];
   const seasons = Object.keys(data.seasons).sort().reverse();
   const seasonSel = document.getElementById('season-select');
-  seasonSel.innerHTML = '<option value="all">All seasons</option>';
+  const prevValue = seasonSel.value;
+  seasonSel.innerHTML = '';
   seasons.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s; opt.textContent = s;
     seasonSel.appendChild(opt);
   });
+  // Preserve a deep-linked selection if it's still valid; otherwise default to most recent.
+  seasonSel.value = (prevValue && seasons.includes(prevValue)) ? prevValue : (seasons[0] || '');
   renderTeamTable();
 }
 
@@ -764,7 +767,7 @@ function renderTeamTable() {
     // repeated stale rows). Game-day = snapshot date matches team's last_match_date.
     seasonFilter = document.getElementById('season-select').value;
     seasons.forEach(s => {
-      if (seasonFilter !== 'all' && s !== seasonFilter) return;
+      if (s !== seasonFilter) return;
       data.seasons[s].forEach(g => {
         if (g.last_match_date && g.last_match_date === g.date) {
           rows.push({...g, season: s});
@@ -1020,13 +1023,6 @@ buildConfPills('ts-view-pills', tsView, v => {
   tsView = v;
   document.getElementById('season-select').style.display   = (v === 'single') ? '' : 'none';
   document.getElementById('date-type-select').style.display = (v === 'cross')  ? '' : 'none';
-  // When switching to one-season view with no season selected yet, default to latest
-  if (v === 'single') {
-    const sel = document.getElementById('season-select');
-    if (sel.value === 'all' && sel.options.length > 1) {
-      sel.value = sel.options[1].value;  // first non-"all" entry (latest, since sorted desc)
-    }
-  }
   renderTeamTable();
 }, [
   { value: 'cross',  label: 'All season summary' },
