@@ -658,6 +658,55 @@ for s in sorted(ws_results.keys(), reverse=True):
             "ps_end_rank":    int(ru_ps["rank"].iloc[0]) if not ru_ps.empty else None,
         },
     })
+# Pre-rated World Series titles (1903-1960).
+# Our rating data starts at season 1961 (expansion era anchor), so WS from 1903-1960
+# aren't otherwise captured. Counts only titles won under the franchise's CURRENT
+# city/name per fleet relocation policy: e.g., the Brooklyn Dodgers' 1955 title is
+# NOT carried into the LA Dodgers count; only LA-era titles (1959 here) carry.
+# Defunct/relocated franchises (Brooklyn Dodgers, NY Giants, Boston Braves,
+# Philadelphia Athletics, original Washington Senators, St. Louis Browns) are
+# omitted entirely since they're not in our data window.
+PRE_1961_CHAMPIONSHIPS = {
+    "Boston Red Sox":         5,   # 1903, 1912, 1915, 1916, 1918
+    "Chicago Cubs":           2,   # 1907, 1908
+    "Chicago White Sox":      2,   # 1906, 1917
+    "Cincinnati Reds":        2,   # 1919, 1940
+    "Cleveland Guardians":    2,   # 1920, 1948 (as Indians)
+    "Detroit Tigers":         2,   # 1935, 1945
+    "Los Angeles Dodgers":    1,   # 1959 (LA era only; Brooklyn era not carried)
+    "Milwaukee Braves":       1,   # 1957 (Milwaukee era; defunct franchise in our window)
+    "New York Yankees":      18,   # 1923, 1927, 1928, 1932, 1936, 1937, 1938, 1939, 1941, 1943, 1947, 1949, 1950, 1951, 1952, 1953, 1956, 1958
+    "Pittsburgh Pirates":     3,   # 1909, 1925, 1960
+    "St. Louis Cardinals":    6,   # 1926, 1931, 1934, 1942, 1944, 1946
+}
+
+PRE_1961_RUNNER_UPS = {
+    "Boston Red Sox":         1,   # 1946
+    "Chicago Cubs":           8,   # 1906, 1910, 1918, 1929, 1932, 1935, 1938, 1945
+    "Chicago White Sox":      2,   # 1919, 1959
+    "Cincinnati Reds":        1,   # 1939
+    "Cleveland Guardians":    1,   # 1954 (as Indians)
+    "Detroit Tigers":         5,   # 1907, 1908, 1909, 1934, 1940
+    "Milwaukee Braves":       1,   # 1958
+    "New York Yankees":       7,   # 1921, 1922, 1926, 1942, 1955, 1957, 1960
+    "Philadelphia Phillies":  2,   # 1915, 1950
+    "Pittsburgh Pirates":     2,   # 1903, 1927
+    "St. Louis Cardinals":    3,   # 1928, 1930, 1943
+}
+
+# Running counts: walk chronologically (oldest first), seeded with pre-1961 totals.
+# Matches DUNCAN/DILLON pattern exactly: each rated entry gets title_count and
+# runner_up_count attached for display as "(N 👑)" / "(N 🥈)" badges in the UI.
+_champ_count = dict(PRE_1961_CHAMPIONSHIPS)
+_ru_count    = dict(PRE_1961_RUNNER_UPS)
+for entry in reversed(champs_list):  # champs_list is newest-first; walk oldest-first
+    ct = entry["champion"]["team"]
+    rt = entry["runner_up"]["team"]
+    _champ_count[ct] = _champ_count.get(ct, 0) + 1
+    _ru_count[rt]    = _ru_count.get(rt, 0) + 1
+    entry["champion"]["title_count"]      = _champ_count[ct]
+    entry["runner_up"]["runner_up_count"] = _ru_count[rt]
+
 with open("docs/data/champions.json", "w") as f:
     json.dump({"MLB": champs_list}, f, separators=(",", ":"))
 

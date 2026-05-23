@@ -875,9 +875,14 @@ function renderChampions() {
     const slug = nameToSlug[t.team] || nameToSlug[label];
     const rating = t.ps_end_rating != null ? t.ps_end_rating.toFixed(2) : '-';
     const rank   = t.ps_end_rank   != null ? `${t.ps_end_rank}` : '-';
+    const countStr = t.title_count
+      ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.title_count} 👑)</span>`
+      : t.runner_up_count
+      ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.runner_up_count} 🥈)</span>`
+      : '';
     const teamTd = slug
-      ? `<td class="${bg} team-cell linked" data-team-slug="${slug}" data-season="${season}" style="white-space:nowrap">${label}</td>`
-      : `<td class="${bg} team-cell" style="white-space:nowrap">${label}</td>`;
+      ? `<td class="${bg} team-cell linked" data-team-slug="${slug}" data-season="${season}" style="white-space:nowrap">${label}${countStr}</td>`
+      : `<td class="${bg} team-cell" style="white-space:nowrap">${label}${countStr}</td>`;
     return `
       ${teamTd}
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
