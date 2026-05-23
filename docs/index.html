@@ -309,7 +309,7 @@
 <nav>
   <button class="active" data-tab="standings">Standings</button>
   <button data-tab="team-summary">Team Summary</button>
-  <button data-tab="league-history">Champions</button>
+  <button data-tab="league-history">World Series</button>
   <button data-tab="goat">GOAT Table</button>
 </nav>
 
@@ -638,7 +638,6 @@ function renderStandings() {
       <td class="rank-cell">${t.rank}</td>
       ${teamTd}
       <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status)}</td>
-      <td class="col-hide-mobile" style="font-size:11px;color:#666">${t.division || ''}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record)}</td>
       <td>${ratingBar(t.rating)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
@@ -655,9 +654,7 @@ function renderStandings() {
       <thead><tr>
         <th>Rank</th><th>Team</th>
         <th class="col-hide-mobile">League</th>
-        <th class="col-hide-mobile">Division</th>
-        <th>W-L (Pct)</th>
-        <th>Rating</th>
+        <th>W-L (Pct)</th><th>Rating</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
         <th class="col-hide-mobile">Honors</th>
@@ -876,16 +873,16 @@ function renderChampions() {
     if (!t) return `<td class="${bg}" colspan="4">-</td>`;
     const label = t.display_name || t.team;
     const slug = nameToSlug[t.team] || nameToSlug[label];
-    const rsR = t.rs_end_rating != null ? t.rs_end_rating.toFixed(2) : '-';
-    const psR = t.ps_end_rating != null ? t.ps_end_rating.toFixed(2) : '-';
+    const rating = t.ps_end_rating != null ? t.ps_end_rating.toFixed(2) : '-';
+    const rank   = t.ps_end_rank   != null ? `${t.ps_end_rank}` : '-';
     const teamTd = slug
       ? `<td class="${bg} team-cell linked" data-team-slug="${slug}" data-season="${season}" style="white-space:nowrap">${label}</td>`
       : `<td class="${bg} team-cell" style="white-space:nowrap">${label}</td>`;
     return `
       ${teamTd}
-      <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#666;font-size:12px">${fmtRecordStacked(t.rs_record, t.ps_record)}</td>
-      <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rsR}</td>
-      <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${psR}</td>`;
+      <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
+      <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
+      <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.rs_record, t.ps_record)}</td>`;
   }
 
   const rows = entries.map(e => `<tr>
@@ -902,14 +899,14 @@ function renderChampions() {
       <thead><tr>
         <th>Season</th>
         <th class="col-champ">Champion</th>
+        <th class="col-champ col-hide-mobile">Rank</th>
+        <th class="col-champ">Rating</th>
         <th class="col-champ col-hide-mobile">W-L</th>
-        <th class="col-champ">RS Rtg</th>
-        <th class="col-champ">PS Rtg</th>
         <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series</th>
         <th class="col-ru">Runner-Up</th>
+        <th class="col-ru col-hide-mobile">Rank</th>
+        <th class="col-ru">Rating</th>
         <th class="col-ru col-hide-mobile">W-L</th>
-        <th class="col-ru">RS Rtg</th>
-        <th class="col-ru">PS Rtg</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -959,7 +956,7 @@ function renderGoat() {
   document.getElementById('goat-table-wrap').innerHTML = `
     <table>
       <thead><tr>
-        <th style="text-align:center">All-time rank</th>
+        <th style="text-align:center">All time rank</th>
         <th style="text-align:center">Season</th>
         <th>Team</th>
         <th class="col-hide-mobile">League</th>
