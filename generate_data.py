@@ -1,5 +1,5 @@
 """
-GRIFFEY — produce site JSON from the ratings/games CSVs.
+GRIFFEY - produce site JSON from the ratings/games CSVs.
 
 Outputs to docs/data/:
   - current_standings.json
@@ -38,7 +38,7 @@ os.makedirs("docs/data/seasons", exist_ok=True)
 # CONFIG: TEAM METADATA
 # =========================================================
 
-# Team -> league (CURRENT, i.e. modern view). Mirrors DUNCAN's TEAM_CONFERENCE pattern —
+# Team -> league (CURRENT, i.e. modern view). Mirrors DUNCAN's TEAM_CONFERENCE pattern -
 # used as the default when no season is given, e.g. for the team-index top-level field.
 TEAM_LEAGUE = {
     # American League
@@ -73,7 +73,7 @@ TEAM_LEAGUE = {
     "San Francisco Giants":   "NL",
     "St. Louis Cardinals":    "NL",
     "Washington Nationals":   "NL",
-    # Historical (defunct or pre-relocation) — current era only
+    # Historical (defunct or pre-relocation) - current era only
     "Kansas City Athletics":  "AL",
     "Milwaukee Braves":       "NL",
     "Seattle Pilots":         "AL",
@@ -157,6 +157,30 @@ def display_name(canonical, season):
         if start <= s <= end:
             return name
     return canonical
+
+
+def current_display_name(canonical):
+    history = GRIFFEY_TEAM_DISPLAY_HISTORY.get(canonical)
+    if not history:
+        return canonical
+    return history[-1][2]
+
+
+def historical_display_names(canonical):
+    """Prior display names (most recent first), excluding the current name.
+    Used to render '(formerly X / Y)' hints in the Team Summary dropdown.
+    Matches DUNCAN's pattern."""
+    history = GRIFFEY_TEAM_DISPLAY_HISTORY.get(canonical)
+    if not history:
+        return []
+    current = history[-1][2]
+    seen = {current}
+    out = []
+    for _, _, name in reversed(history[:-1]):
+        if name not in seen:
+            out.append(name)
+            seen.add(name)
+    return out
 
 
 def league(team, season=None):
@@ -310,11 +334,12 @@ print(f"  Playoff snaps:  {(ratings['is_playoff_snapshot']==1).sum():,} rows")
 
 print("\nComputing per-team season records...")
 def team_game_view(games_df):
-    """One row per team per game, with W/L flag from that team's perspective."""
-    home = games_df[["season", "date_game", "home_team_name", "home_win", "is_tie"]].rename(
-        columns={"home_team_name": "team", "home_win": "won"})
-    away = games_df[["season", "date_game", "visitor_team_name", "visitor_win", "is_tie"]].rename(
-        columns={"visitor_team_name": "team", "visitor_win": "won"})
+    """One row per team per game, with W/L flag + result string from that team's
+    perspective. Used both for end-of-season totals and per-snapshot rolling records."""
+    home = games_df[["season", "date_game", "home_team_name", "home_win", "is_tie", "home_result"]].rename(
+        columns={"home_team_name": "team", "home_win": "won", "home_result": "result"})
+    away = games_df[["season", "date_game", "visitor_team_name", "visitor_win", "is_tie", "visitor_result"]].rename(
+        columns={"visitor_team_name": "team", "visitor_win": "won", "visitor_result": "result"})
     return pd.concat([home, away], ignore_index=True)
 
 team_games = team_game_view(games)
@@ -344,6 +369,67 @@ print(f"  {len(rec_pivot):,} (season, team) records computed.")
 
 
 # =========================================================
+# PER-SNAPSHOT ROLLING RECORDS + LAST MATCH
+# =========================================================
+# For each (team, snapshot_date), compute the team's cumulative regular-season W-L,
+# playoff W-L, last completed game result, and last match date. Used to populate the
+# Standings tab with W-L, Last Game, Date columns (fleet convention).
+
+print("\nComputing per-snapshot rolling records + last-match lookups...")
+team_games_sorted = team_games.sort_values(["team", "season", "date_game"]).copy()
+team_games_sorted["rs_w_inc"] = (~team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 1)).astype(int)
+team_games_sorted["rs_l_inc"] = (~team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 0)).astype(int)
+team_games_sorted["ps_w_inc"] = ( team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 1)).astype(int)
+team_games_sorted["ps_l_inc"] = ( team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 0)).astype(int)
+for col in ["rs_w", "rs_l", "ps_w", "ps_l"]:
+    team_games_sorted[f"cum_{col}"] = (
+        team_games_sorted.groupby(["team", "season"])[f"{col}_inc"].cumsum().astype(int)
+    )
+
+# We'll do an asof-merge for each team. Result: per (team, snapshot_date), the cumulative
+# record as of the latest game ON OR BEFORE that date in that season.
+unique_snaps = ratings[["season", "name", "ranking_date"]].drop_duplicates().copy()
+unique_snaps = unique_snaps.rename(columns={"name": "team", "ranking_date": "date_game"})
+
+# merge_asof requires both sides sorted by the `on` key globally
+unique_snaps_sorted  = unique_snaps.sort_values("date_game").reset_index(drop=True)
+team_games_for_merge = team_games_sorted[
+    ["team", "season", "date_game", "result", "cum_rs_w", "cum_rs_l", "cum_ps_w", "cum_ps_l"]
+].sort_values("date_game").reset_index(drop=True)
+
+snap_records = pd.merge_asof(
+    unique_snaps_sorted, team_games_for_merge,
+    on="date_game", by=["team", "season"],
+    direction="backward",  # latest game <= snapshot date
+)
+
+snap_records["rs_record"] = (
+    snap_records["cum_rs_w"].fillna(0).astype(int).astype(str)
+    + "-" + snap_records["cum_rs_l"].fillna(0).astype(int).astype(str)
+)
+snap_records["ps_record"] = snap_records.apply(
+    lambda r: f"{int(r['cum_ps_w'])}-{int(r['cum_ps_l'])}"
+              if (pd.notna(r["cum_ps_w"]) and (r["cum_ps_w"] + r["cum_ps_l"]) > 0) else "",
+    axis=1,
+)
+snap_records["last_match"]      = snap_records["result"].fillna("")
+snap_records["last_match_date"] = snap_records["date_game"].dt.strftime("%Y-%m-%d")
+
+# Index for fast lookup: (season, team, ranking_date) -> dict
+snap_records["key_date"] = snap_records["date_game"]
+snap_record_lookup = {
+    (int(r["season"]), r["team"], r["key_date"]): {
+        "rs_record":       r["rs_record"],
+        "ps_record":       r["ps_record"],
+        "last_match":      r["last_match"],
+        "last_match_date": r["last_match_date"],
+    }
+    for _, r in snap_records.iterrows()
+}
+print(f"  {len(snap_record_lookup):,} (season, team, snapshot) lookups built.")
+
+
+# =========================================================
 # WORLD SERIES CHAMPION + RUNNER-UP DETECTION
 # =========================================================
 # Find each season's WS champion (and runner-up) by walking the postseason structurally:
@@ -358,7 +444,7 @@ for s, rs_end in rs_end_by_season.items():
     season_post = games[(games["season"] == s) & (games["date_game"] > rs_end)].copy()
     if season_post.empty:
         continue
-    # Latest game's two teams = WS contestants (almost always — except in 2020 if WS
+    # Latest game's two teams = WS contestants (almost always - except in 2020 if WS
     # spanned multiple days, the last game is the clinching game). Use the latest pair.
     last_dt = season_post["date_game"].max()
     # All games between those two teams in the postseason = the WS games
@@ -427,10 +513,14 @@ print("Writing per-season JSON files...")
 for s in sorted(ratings["season"].unique()):
     s = int(s)
     sdf = ratings[ratings["season"] == s].copy()
+    ws_info = ws_results.get(s, {})
+    ws_champ = ws_info.get("champion")
+    ws_ru    = ws_info.get("runner_up")
     snapshots = []
     for rid, rdf in sdf.groupby("ranking_id"):
         rdf = rdf.sort_values("rank")
-        snap_date = str(rdf["ranking_date"].iloc[0].date())
+        snap_date_ts = rdf["ranking_date"].iloc[0]
+        snap_date = str(snap_date_ts.date())
         is_rs_end = int(rdf["is_rs_end"].iloc[0])
         is_ps_end = int(rdf["is_ps_end"].iloc[0])
         is_playoff_snap = int(rdf["is_playoff_snapshot"].iloc[0])
@@ -439,17 +529,23 @@ for s in sorted(ratings["season"].unique()):
             label = "End of Regular Season"
         elif is_ps_end and is_playoff_snap:
             label = "End of Postseason"
-        teams_snap = [
-            {
-                "rank":         int(r["rank"]) if not pd.isna(r["rank"]) else None,
-                "team":         r["name"],
-                "display_name": display_name(r["name"], s),
-                "league":       league(r["name"], s),
-                "division":     division(r["name"], s),
-                "rating":       round(float(r["rating"]), 3),
-            }
-            for _, r in rdf.iterrows()
-        ]
+        teams_snap = []
+        for _, r in rdf.iterrows():
+            rec = snap_record_lookup.get((s, r["name"], snap_date_ts), {})
+            finals_status = 2 if r["name"] == ws_champ else (1 if r["name"] == ws_ru else 0)
+            teams_snap.append({
+                "rank":            int(r["rank"]) if not pd.isna(r["rank"]) else None,
+                "team":            r["name"],
+                "display_name":    display_name(r["name"], s),
+                "league":          league(r["name"], s),
+                "division":        division(r["name"], s),
+                "rating":          round(float(r["rating"]), 3),
+                "regular_record":  rec.get("rs_record", "0-0"),
+                "playoff_record":  rec.get("ps_record", ""),
+                "last_match":      rec.get("last_match", ""),
+                "last_match_date": rec.get("last_match_date", ""),
+                "finals_status":   finals_status,
+            })
         snapshots.append({
             "date":            snap_date,
             "label":           label,
@@ -515,10 +611,11 @@ for team in sorted(ratings["name"].unique()):
         }, f, separators=(",", ":"))
 
     teams_index.append({
-        "team":         team,
-        "display_name": display_name(team, ratings["season"].max()),
-        "league":       league(team, ratings["season"].max()),
-        "slug":         team_slug,
+        "team":              team,
+        "display_name":      current_display_name(team),
+        "league":            league(team, ratings["season"].max()),
+        "historical_names":  historical_display_names(team),
+        "slug":              team_slug,
     })
 
 teams_index.sort(key=lambda x: x["team"])

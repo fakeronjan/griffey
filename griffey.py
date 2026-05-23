@@ -1,5 +1,5 @@
 """
-GRIFFEY — MLB power ratings via WLS Massey solver.
+GRIFFEY - MLB power ratings via WLS Massey solver.
 
 Named after Ken Griffey Jr., Hall-of-Famer who played for Cincinnati 2000-2008.
 
@@ -37,7 +37,7 @@ WINDOW_MULTIPLIER = 0.75
 
 HOME_COURT_ADJUSTMENT = 0.1   # raw-run home advantage (modern-era empirical: ~0.09-0.13 runs)
 
-# Margin transform: cap at 10 runs. Captures ~98% of MLB games uncapped — only the most
+# Margin transform: cap at 10 runs. Captures ~98% of MLB games uncapped - only the most
 # extreme blowouts (often garbage-time bullpen scenarios) get trimmed.
 MARGIN_TRANSFORM = "cap"
 MARGIN_CAP = 10
@@ -140,7 +140,7 @@ TEAM_LEAGUE = {
     "Los Angeles Dodgers": "NL", "New York Mets": "NL", "Philadelphia Phillies": "NL",
     "Pittsburgh Pirates": "NL", "San Diego Padres": "NL", "San Francisco Giants": "NL",
     "St. Louis Cardinals": "NL", "Washington Nationals": "NL",
-    # Switchers — Brewers AL 1969-1997 then NL; Astros NL 1962-2012 then AL
+    # Switchers - Brewers AL 1969-1997 then NL; Astros NL 1962-2012 then AL
     # Era-aware league should live in generate_data.py via per-(team,season) lookup;
     # this dict gives "current" league for the standings filter.
     "Milwaukee Brewers": "NL",
@@ -325,7 +325,7 @@ def prepare_game_data(raw_df):
     # Win flags
     df["home_win"] = (df["home_margin"] > 0).astype(int)
     df["visitor_win"] = (df["home_margin"] < 0).astype(int)
-    # MLB has no ties in modern era — extra innings always determine a winner. (Pre-1969
+    # MLB has no ties in modern era - extra innings always determine a winner. (Pre-1969
     # there were occasional ties before suspended-game rules tightened.)
     df["is_tie"] = (df["home_margin"] == 0).astype(int)
 
@@ -416,7 +416,7 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
     Builds X (n_games × n_teams) with +1 for home, -1 for visitor, y from the transformed
     HCA-adjusted home margin, and W from the recency weights. Solves min sum_i w_i * (X_i r - y_i)^2
     with a zero-sum constraint enforced as a high-weight row PER CONNECTED COMPONENT (not just
-    a single global constraint). This handles MLB's 2020 COVID regional schedule cleanly —
+    a single global constraint). This handles MLB's 2020 COVID regional schedule cleanly -
     when the East/Central/West components don't connect via cross-region games, each component
     gets its own zero-sum anchor instead of all three sloshing around one global mean.
 
@@ -434,7 +434,7 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
     home_names = window_df["home_team_name"].to_numpy()
     visitor_names = window_df["visitor_team_name"].to_numpy()
 
-    # Connected components — one zero-sum constraint per component
+    # Connected components - one zero-sum constraint per component
     comp_map = _connected_components(teams, zip(home_names, visitor_names))
     n_components = max(comp_map.values()) + 1 if comp_map else 1
     teams_by_comp = [[] for _ in range(n_components)]
@@ -537,7 +537,7 @@ def compute_ratings(master_df, existing_ratings_df):
             season_for_window = rid_to_season[max(prior_ids)] if prior_ids else MIN_SEASON
         window_size = _window_for_season(season_for_window)
 
-        # Per-season window-fill gate — don't publish until this season's window is full.
+        # Per-season window-fill gate - don't publish until this season's window is full.
         if i < window_size:
             continue
 
@@ -583,7 +583,7 @@ def compute_ratings(master_df, existing_ratings_df):
     ratings_df.drop_duplicates(keep="first", inplace=True)
     ratings_df["ranking_date"] = pd.to_datetime(ratings_df["ranking_date"]).dt.date
 
-    # MLB cache is large but compressible — use gzip like MESSI
+    # MLB cache is large but compressible - use gzip like MESSI
     ratings_df.to_csv("griffey_ratings.csv.gz", index=False, compression="gzip")
     print(f"griffey_ratings.csv.gz saved ({len(ratings_df):,} rows)")
     return ratings_df
@@ -615,7 +615,7 @@ if __name__ == "__main__":
     master = prepare_game_data(raw)
     print(f"\nMargin sanity: mean home margin = {master['home_margin'].mean():+.3f}, home win rate = {master['home_win'].mean()*100:.1f}%")
 
-    # Ratings (incremental — load existing cache if present)
+    # Ratings (incremental - load existing cache if present)
     try:
         existing_ratings = pd.read_csv("griffey_ratings.csv.gz")
     except FileNotFoundError:

@@ -26,14 +26,6 @@
     letter-spacing: 3px;
     color: #ff6eb4;
   }
-  header h1 .stage {
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.55);
-    letter-spacing: 1px;
-    margin-left: 10px;
-    text-transform: uppercase;
-  }
   header p.subtitle {
     font-size: 12px;
     color: rgba(255,255,255,0.75);
@@ -208,6 +200,16 @@
   .finish-runner   { background: #ddd; color: #444; }
   .conf-pill       { background: #f4f4f4; color: #555; border: 1px solid #e8e8e8; }
 
+  .last-match-cell {
+    font-size: 12px;
+    color: #555;
+    max-width: 240px;
+  }
+  .result-W       { color: #2e7d32; font-weight: 700; }
+  .result-L       { color: #c62828; font-weight: 700; }
+  .result-W-stale { color: #2e7d32; font-weight: 400; }
+  .result-L-stale { color: #c62828; font-weight: 400; }
+
   /* Champions / GOAT layout */
   .col-champ  { background: #fffdf3; }
   .col-ru     { background: #fafafa; }
@@ -226,7 +228,6 @@
   @media (max-width: 600px) {
     header { padding: 14px 16px 12px; }
     header h1 { font-size: 20px; letter-spacing: 2px; }
-    header h1 .stage { font-size: 11px; margin-left: 6px; }
     nav button { padding: 10px 14px; font-size: 12px; }
     .tab { padding: 12px; }
     td, th { padding: 7px 8px; font-size: 12px; }
@@ -234,6 +235,7 @@
     select { min-width: unset; width: 100%; }
     .conf-pills button { font-size: 11px; padding: 5px 9px; }
     .rating-bar-track { display: none; }
+    .last-match-cell { max-width: 180px; }
     .col-hide-mobile { display: none; }
   }
 
@@ -283,9 +285,9 @@
 </nav>
 
 <header>
-  <h1>GRIFFEY ⚾<span class="stage">(Alpha)</span></h1>
-  <p class="subtitle">MLB Power Rankings</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. ~1.0 = playoff contender; ~1.8+ = elite; ~2.5+ = generational. Data covers 1961 (expansion era) through the current season.</p>
+  <h1>GRIFFEY ⚾</h1>
+  <p class="subtitle">MLB Power Rankings · Alpha</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. ~+1.0 = contender; ~+1.5 = elite; ~+2.0+ = generational (1976 Cincinnati Reds = 2.48).</p>
   <p class="updated" id="last-updated">Loading...</p>
   <p class="updated" id="last-refreshed" style="font-size:11px;color:#999;margin-top:-4px"></p>
 </header>
@@ -306,7 +308,7 @@
     <span class="count-label" id="standings-count"></span>
   </div>
   <p class="data-note" id="warmup-note" style="display:none">
-    Note: ratings need a 121 game-day warm-up window, so the 1961 season's first ranked snapshot is around late June.
+    Note: ratings need a 121 game-day warm-up window, so the 1961 season's first ranked snapshot is August 14.
   </p>
   <div id="standings-table-wrap"><p class="loading">Loading standings...</p></div>
 </div>
@@ -323,16 +325,14 @@
 <!-- CHAMPIONS -->
 <div id="league-history" class="tab">
   <p class="data-note">
-    World Series winners and runners-up since 1961, with each team's end-of-regular-season and end-of-postseason ratings. Relocations are treated as separate franchises (e.g., the Brooklyn Dodgers and Los Angeles Dodgers are not collapsed). The 1994 strike season has no champion.
+    World Series winners and runners-up since 1961, with each team's end-of-regular-season and end-of-postseason ratings. Relocations are treated as separate franchises. The 1994 strike season has no champion.
   </p>
   <div id="history-table-wrap"><p class="loading">Loading champions...</p></div>
 </div>
 
 <!-- GOAT TABLE -->
 <div id="goat" class="tab">
-  <p class="data-note">
-    Two answers to the GOAT question. End of regular season ranks the best teams over the full year, ignoring the playoff random walk that baseball is famous for. End of postseason filters to teams that reached the World Series and ranks them by post-WS rating. Top 50 each, 1961 through the current season.
-  </p>
+  <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (full-year answer) and end of postseason (eligibility requires reaching the World Series). Data covers 1961 through the current season.</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
@@ -389,6 +389,16 @@ function fmtRecord(rec) {
 function fmtRecordStacked(reg, playoff) {
   if (!reg || reg === '-') return '0-0';
   const top = fmtRecord(reg);
+  const pm = playoff ? playoff.match(/^(\d+)-(\d+)$/) : null;
+  const hasPlayoffs = pm && (parseInt(pm[1]) + parseInt(pm[2]) > 0);
+  if (!hasPlayoffs) return top;
+  return `${top}<div style="font-size:10px;color:#888;font-weight:400;line-height:1.2">${playoff}</div>`;
+}
+
+function fmtRecordSmart(reg, playoff) {
+  // Standings/Team Summary: regular-season W-L with win pct on top, plus playoff W-L
+  // (no parens) on a line below for postseason teams. Matches DUNCAN's pattern.
+  const top = fmtRecord(reg || '0-0');
   const pm = playoff ? playoff.match(/^(\d+)-(\d+)$/) : null;
   const hasPlayoffs = pm && (parseInt(pm[1]) + parseInt(pm[2]) > 0);
   if (!hasPlayoffs) return top;
@@ -567,14 +577,35 @@ function selectSnapshot(date) {
   renderStandings();
 }
 
+function renderLastMatch(raw, season, isStale) {
+  if (!raw) return '-';
+  const cls = isStale
+    ? (raw[0] === 'W' ? 'result-W-stale' : raw[0] === 'L' ? 'result-L-stale' : '')
+    : (raw[0] === 'W' ? 'result-W' : raw[0] === 'L' ? 'result-L' : '');
+  // "W vs. Boston Red Sox 5-3" or "L @ Boston Red Sox 3-5"
+  const m = raw.match(/^([WL])\s+(vs\.?|@)\s+(.+?)\s+(\d+\s*-\s*\d+)$/);
+  if (!m) return `<span class="${cls}">${raw}</span>`;
+  const [, letter, venue, opponent, score] = m;
+  const slug = nameToSlug[opponent.trim()];
+  const oppHtml = slug
+    ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
+    : opponent;
+  return `<span class="${cls}">${letter} ${venue} ${oppHtml} ${score}</span>`;
+}
+
 function renderStandings() {
   if (!currentSnapshot) return;
   const conf = standingsConf;
   let teams = currentSnapshot.teams;
   if (conf !== 'all') teams = teams.filter(t => t.league === conf);
 
+  const snaps = currentSeasonData.snapshots;
+  const idx = snaps.findIndex(s => s.date === currentSnapshot.date);
+  const prevDate = idx > 0 ? snaps[idx - 1].date : null;
+
   const season = currentSeasonData && currentSeasonData.season;
   const rows = teams.map(t => {
+    const isStale = !!(prevDate && t.last_match_date && t.last_match_date <= prevDate);
     const slug = nameToSlug[t.team];
     const label = t.display_name || t.team;
     const teamTd = slug
@@ -583,9 +614,13 @@ function renderStandings() {
     return `<tr>
       <td class="rank-cell">${t.rank}</td>
       ${teamTd}
-      <td class="col-hide-mobile">${leagueBadge(t.league, 0)}</td>
+      <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#666">${t.division || ''}</td>
+      <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record)}</td>
       <td>${ratingBar(t.rating)}</td>
+      <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
+      <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
+      <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status)}</td>
     </tr>`;
   }).join('');
 
@@ -598,7 +633,11 @@ function renderStandings() {
         <th>Rank</th><th>Team</th>
         <th class="col-hide-mobile">League</th>
         <th class="col-hide-mobile">Division</th>
+        <th>W-L (Pct)</th>
         <th>Rating</th>
+        <th>Last Game</th>
+        <th class="col-hide-mobile">Date</th>
+        <th class="col-hide-mobile">Honors</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -619,7 +658,13 @@ function populateTeamSelect() {
   filtered.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t.slug;
-    opt.textContent = t.display_name || t.team;
+    // For franchises that have changed names in the same market, append
+    // the prior names in parens so search-by-typing finds them too.
+    const priors = (t.historical_names || []);
+    const name = t.display_name || t.team;
+    opt.textContent = priors.length
+      ? `${name} (${priors.join(' / ')})`
+      : name;
     sel.appendChild(opt);
   });
 }
@@ -632,6 +677,7 @@ async function loadTeamsIndex() {
     teamsIndex.forEach(t => {
       nameToSlug[t.team] = t.slug;
       if (t.display_name) nameToSlug[t.display_name] = t.slug;
+      (t.historical_names || []).forEach(h => { nameToSlug[h] = t.slug; });
     });
     populateTeamSelect();
   } catch(e) {
@@ -837,7 +883,7 @@ buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populat
 buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
 buildConfPills('goat-mode-pills',      goatMode,      v => { goatMode = v; renderGoat(); }, [
   { value: 'rs', label: 'End of regular season' },
-  { value: 'ps', label: 'End of postseason (WS teams only)' },
+  { value: 'ps', label: 'End of postseason' },
 ]);
 
 (async () => {
