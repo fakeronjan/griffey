@@ -474,6 +474,37 @@ for s, rs_end in rs_end_by_season.items():
     ws_results[s] = {"champion": champ, "runner_up": ru, "series": series}
 
 print(f"  WS detected: {len(ws_results)} seasons.")
+
+
+# =========================================================
+# DIVISION WINNERS (per season, per team)
+# =========================================================
+# Divisions exist 1969+ in MLB. Pre-1969 had single league standings (no divisions).
+# Division winner = team with best regular-season W-L pct in its division. Approximates
+# the official outcome closely enough for badge purposes; rare tie-breaker games not
+# resolved here.
+
+print("\nComputing division winners...")
+division_winners = set()  # set of (season, team) tuples
+rs_only = team_games[~team_games["is_playoff_game"]].copy()
+for s, sub in rs_only.groupby("season"):
+    s = int(s)
+    if s < 1969:
+        continue
+    by_team = sub.groupby("team").agg(W=("won", "sum"), G=("won", "size")).reset_index()
+    by_team["L"]   = by_team["G"] - by_team["W"]
+    by_team["pct"] = by_team["W"] / by_team["G"]
+    by_team["div"] = by_team["team"].apply(lambda t: division(t, s))
+    by_team = by_team[~by_team["div"].isin({"Other", "(pre-1969 AL)", "(pre-1969 NL)"})]
+    if by_team.empty:
+        continue
+    leaders = (
+        by_team.sort_values("pct", ascending=False)
+        .drop_duplicates("div", keep="first")
+    )
+    for _, r in leaders.iterrows():
+        division_winners.add((s, r["team"]))
+print(f"  {len(division_winners)} division titles flagged.")
 print(f"  Last 5: {[(s, ws_results[s]['champion'], ws_results[s]['series']) for s in sorted(ws_results)[-5:]]}")
 
 
@@ -533,18 +564,20 @@ for s in sorted(ratings["season"].unique()):
         for _, r in rdf.iterrows():
             rec = snap_record_lookup.get((s, r["name"], snap_date_ts), {})
             finals_status = 2 if r["name"] == ws_champ else (1 if r["name"] == ws_ru else 0)
+            div_winner = 1 if (s, r["name"]) in division_winners else 0
             teams_snap.append({
-                "rank":            int(r["rank"]) if not pd.isna(r["rank"]) else None,
-                "team":            r["name"],
-                "display_name":    display_name(r["name"], s),
-                "league":          league(r["name"], s),
-                "division":        division(r["name"], s),
-                "rating":          round(float(r["rating"]), 3),
-                "regular_record":  rec.get("rs_record", "0-0"),
-                "playoff_record":  rec.get("ps_record", ""),
-                "last_match":      rec.get("last_match", ""),
-                "last_match_date": rec.get("last_match_date", ""),
-                "finals_status":   finals_status,
+                "rank":             int(r["rank"]) if not pd.isna(r["rank"]) else None,
+                "team":             r["name"],
+                "display_name":     display_name(r["name"], s),
+                "league":           league(r["name"], s),
+                "division":         division(r["name"], s),
+                "rating":           round(float(r["rating"]), 3),
+                "regular_record":   rec.get("rs_record", "0-0"),
+                "playoff_record":   rec.get("ps_record", ""),
+                "last_match":       rec.get("last_match", ""),
+                "last_match_date":  rec.get("last_match_date", ""),
+                "finals_status":    finals_status,
+                "division_winner":  div_winner,
             })
         snapshots.append({
             "date":            snap_date,
@@ -579,23 +612,25 @@ for team in sorted(ratings["name"].unique()):
         # season_flag follows DUNCAN/DILLON convention: 0 = mid-season, 1 = end of
         # regular season, 2 = end of postseason.
         entries = []
+        div_winner = 1 if (s, team) in division_winners else 0
         for _, r in sub.sort_values("ranking_date").iterrows():
             snap_date_ts = r["ranking_date"]
             rec = snap_record_lookup.get((s, team, snap_date_ts), {})
             sf = 2 if int(r["is_ps_end"]) == 1 else (1 if int(r["is_rs_end"]) == 1 else 0)
             entries.append({
-                "date":            str(snap_date_ts.date()),
-                "rank":            int(r["rank"]) if not pd.isna(r["rank"]) else None,
-                "rating":          round(float(r["rating"]), 3),
-                "display_name":    display_name(team, s),
-                "league":          league(team, s),
+                "date":             str(snap_date_ts.date()),
+                "rank":             int(r["rank"]) if not pd.isna(r["rank"]) else None,
+                "rating":           round(float(r["rating"]), 3),
+                "display_name":     display_name(team, s),
+                "league":           league(team, s),
                 "division":        division(team, s),
-                "regular_record":  rec.get("rs_record", "0-0"),
-                "playoff_record":  rec.get("ps_record", ""),
-                "last_match":      rec.get("last_match", ""),
-                "last_match_date": rec.get("last_match_date", ""),
-                "finals_status":   finals_status,
-                "season_flag":     sf,
+                "regular_record":   rec.get("rs_record", "0-0"),
+                "playoff_record":   rec.get("ps_record", ""),
+                "last_match":       rec.get("last_match", ""),
+                "last_match_date":  rec.get("last_match_date", ""),
+                "finals_status":    finals_status,
+                "division_winner":  div_winner,
+                "season_flag":      sf,
             })
         seasons_dict[str(s)] = entries
     with open(f"docs/data/teams/{team_slug}.json", "w") as f:

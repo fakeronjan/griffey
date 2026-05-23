@@ -330,13 +330,13 @@
 <!-- TEAM SUMMARY -->
 <div id="team-summary" class="tab">
   <div class="conf-pills" id="ts-conf-pills"></div>
+  <div class="conf-pills" id="ts-view-pills"></div>
   <div class="controls">
     <select id="team-select"><option value="">- Select a team -</option></select>
-    <select id="season-select"><option value="all">All seasons</option></select>
-    <select id="date-type-select">
-      <option value="all">All dates</option>
-      <option value="eor">End of regular season</option>
+    <select id="season-select" style="display:none"><option value="all">All seasons</option></select>
+    <select id="date-type-select" style="display:none">
       <option value="eos">End of postseason</option>
+      <option value="eor">End of regular season</option>
     </select>
   </div>
   <div id="chart-wrap" style="display:none">
@@ -377,6 +377,7 @@ const LEAGUES = ['AL', 'NL'];
 let standingsConf = 'all';
 let tsConf        = 'all';
 let goatConf      = 'all';
+let tsView        = 'cross';  // 'cross' (all-season summary, eos default) or 'single' (one season, all dates)
 
 function buildConfPills(containerId, current, onSelect, options) {
   const wrap = document.getElementById(containerId);
@@ -428,13 +429,25 @@ function fmtRecordSmart(reg, playoff) {
   return `${top}<div style="font-size:10px;color:#888;font-weight:400;line-height:1.2">${playoff}</div>`;
 }
 
-function leagueBadge(lg, finalsStatus) {
+function leagueBadge(lg, finalsStatus, divName, divisionWinner) {
   if (!lg) return '';
-  // finals_status >= 1 means the team made the World Series
-  if (finalsStatus >= 1) {
-    return `<span class="finish-badge finish-champion" title="${lg} Pennant">${lg} 🏆</span>`;
+  // Two side-by-side pills: league pill (highlighted if pennant won), and division
+  // pill (highlighted if division won). Division pill only shows when we have a
+  // division name AND the season is divisional era (1969+).
+  const lgClass = (finalsStatus >= 1) ? 'finish-badge finish-champion' : 'finish-badge conf-pill';
+  const lgIcon  = (finalsStatus >= 1) ? ' 🏆' : '';
+  const lgTitle = (finalsStatus >= 1) ? `${lg} Pennant` : lg;
+  let html = `<span class="${lgClass}" title="${lgTitle}">${lg}${lgIcon}</span>`;
+
+  if (divName && !divName.startsWith('(') && divName !== 'Other') {
+    // Strip the leading league prefix from division name for display: "AL East" -> "East"
+    const shortDiv = divName.replace(/^(AL|NL)\s+/, '');
+    const divClass = divisionWinner ? 'finish-badge finish-champion' : 'finish-badge conf-pill';
+    const divIcon  = divisionWinner ? ' 🥇' : '';
+    const divTitle = divisionWinner ? `${divName} Division Winner` : divName;
+    html += ` <span class="${divClass}" title="${divTitle}">${shortDiv}${divIcon}</span>`;
   }
-  return `<span class="finish-badge conf-pill">${lg}</span>`;
+  return html;
 }
 
 function finishBadge(finalsStatus) {
@@ -637,7 +650,7 @@ function renderStandings() {
     return `<tr>
       <td class="rank-cell">${t.rank}</td>
       ${teamTd}
-      <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status)}</td>
+      <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status, t.division, t.division_winner)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record)}</td>
       <td>${ratingBar(t.rating)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
@@ -736,19 +749,29 @@ function renderTeamTable() {
   const slug = document.getElementById('team-select').value;
   if (!slug || !teamCache[slug]) return;
   const data = teamCache[slug];
-  const seasonFilter = document.getElementById('season-select').value;
-  const dateType     = document.getElementById('date-type-select').value;
 
   let rows = [];
   const seasons = Object.keys(data.seasons).sort();
-  seasons.forEach(s => {
-    if (seasonFilter !== 'all' && s !== seasonFilter) return;
-    data.seasons[s].forEach(g => rows.push({...g, season: s}));
-  });
-
-  // Date-type filter: explicit selection of regular-season-end vs postseason-end snapshot
-  if (dateType === 'eor')      rows = rows.filter(g => g.season_flag === 1);
-  else if (dateType === 'eos') rows = rows.filter(g => g.season_flag === 2);
+  let seasonFilter;
+  if (tsView === 'single') {
+    // One-season view: filter to selected season, show all dates within it.
+    seasonFilter = document.getElementById('season-select').value;
+    seasons.forEach(s => {
+      if (seasonFilter !== 'all' && s !== seasonFilter) return;
+      data.seasons[s].forEach(g => rows.push({...g, season: s}));
+    });
+  } else {
+    // Cross-season summary view: all seasons, but filtered to one snapshot per season
+    // (end of regular season OR end of postseason per the date-type pill).
+    seasonFilter = 'all';
+    const dateType = document.getElementById('date-type-select').value;
+    const flag     = (dateType === 'eor') ? 1 : 2;
+    seasons.forEach(s => {
+      data.seasons[s].forEach(g => {
+        if (g.season_flag === flag) rows.push({...g, season: s});
+      });
+    });
+  }
 
   drawChart(rows, seasonFilter);
 
@@ -767,7 +790,7 @@ function renderTeamTable() {
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
-    <td class="col-hide-mobile" style="font-size:11px">${leagueBadge(g.league || data.league, g.finals_status)}</td>
+    <td class="col-hide-mobile" style="font-size:11px">${leagueBadge(g.league || data.league, g.finals_status, g.division, g.division_winner)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(g.finals_status)}</td>
   </tr>`;
   }).join('');
@@ -982,6 +1005,25 @@ buildConfPills('goat-mode-pills',      goatMode,      v => { goatMode = v; rende
   { value: 'rs', label: 'End of regular season' },
   { value: 'ps', label: 'End of postseason' },
 ]);
+buildConfPills('ts-view-pills', tsView, v => {
+  tsView = v;
+  document.getElementById('season-select').style.display   = (v === 'single') ? '' : 'none';
+  document.getElementById('date-type-select').style.display = (v === 'cross')  ? '' : 'none';
+  // When switching to one-season view with no season selected yet, default to latest
+  if (v === 'single') {
+    const sel = document.getElementById('season-select');
+    if (sel.value === 'all' && sel.options.length > 1) {
+      sel.value = sel.options[1].value;  // first non-"all" entry (latest, since sorted desc)
+    }
+  }
+  renderTeamTable();
+}, [
+  { value: 'cross',  label: 'All season summary' },
+  { value: 'single', label: 'All games within one season' },
+]);
+// Initial dropdown visibility for default view ('cross')
+document.getElementById('date-type-select').style.display = '';
+document.getElementById('season-select').style.display    = 'none';
 
 (async () => {
   await loadTeamsIndex();
