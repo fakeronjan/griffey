@@ -439,7 +439,7 @@ function leagueBadge(lg, finalsStatus, divName, divisionWinner) {
   const lgTitle = (finalsStatus >= 1) ? `${lg} Pennant` : lg;
   let html = `<span class="${lgClass}" title="${lgTitle}">${lg}${lgIcon}</span>`;
 
-  if (divName && !divName.startsWith('(') && divName !== 'Other') {
+  if (divName && !divName.startsWith('(') && divName !== 'Other' && divName !== lg) {
     // Strip the leading league prefix from division name for display: "AL East" -> "East"
     const shortDiv = divName.replace(/^(AL|NL)\s+/, '');
     const divClass = divisionWinner ? 'finish-badge finish-champion' : 'finish-badge conf-pill';
@@ -468,7 +468,28 @@ async function teamLinkClick(slug, season) {
   buildConfPills('ts-conf-pills', tsConf, v => { tsConf = v; populateTeamSelect(); });
   populateTeamSelect();
   document.getElementById('team-select').value = slug;
+  const wantSingle = season && season !== 'all' && /^\d{4}$/.test(String(season));
+  tsView = wantSingle ? 'single' : 'cross';
+  buildConfPills('ts-view-pills', tsView, v => {
+    tsView = v;
+    document.getElementById('season-select').style.display   = (v === 'single') ? '' : 'none';
+    document.getElementById('date-type-select').style.display = (v === 'cross')  ? '' : 'none';
+    renderTeamTable();
+  }, [
+    { value: 'cross',  label: 'All season summary' },
+    { value: 'single', label: 'All games within one season' },
+  ]);
+  document.getElementById('season-select').style.display    = wantSingle ? '' : 'none';
+  document.getElementById('date-type-select').style.display = wantSingle ? 'none' : '';
   await loadTeam(slug);
+  if (wantSingle) {
+    const sel = document.getElementById('season-select');
+    const targetVal = String(season);
+    if ([...sel.options].some(o => o.value === targetVal)) {
+      sel.value = targetVal;
+      renderTeamTable();
+    }
+  }
 }
 
 function seasonLinkClick(season) {

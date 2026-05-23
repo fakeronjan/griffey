@@ -106,7 +106,7 @@ TEAM_DIVISION_HISTORY = {
     "Kansas City Royals":    [(1969, 1993, "AL West"), (1994, 9999, "AL Central")],
     "Minnesota Twins":       [(1969, 1993, "AL West"), (1994, 9999, "AL Central")],
     # AL West
-    "Houston Astros":        [(2013, 9999, "AL West")],  # Astros joined AL West in 2013
+    "Houston Astros":        [(1969, 1993, "NL West"), (1994, 2012, "NL Central"), (2013, 9999, "AL West")],
     "Los Angeles Angels":    [(1969, 1993, "AL West"), (1994, 9999, "AL West")],
     "Oakland Athletics":     [(1969, 1993, "AL West"), (1994, 9999, "AL West")],
     "Seattle Mariners":      [(1977, 1993, "AL West"), (1994, 9999, "AL West")],
@@ -120,7 +120,7 @@ TEAM_DIVISION_HISTORY = {
     # NL Central (formed 1994)
     "Chicago Cubs":          [(1969, 1993, "NL East"), (1994, 9999, "NL Central")],
     "Cincinnati Reds":       [(1969, 1993, "NL West"), (1994, 9999, "NL Central")],
-    "Milwaukee Brewers":     [(1998, 9999, "NL Central")],
+    "Milwaukee Brewers":     [(1970, 1971, "AL West"), (1972, 1993, "AL East"), (1994, 1997, "AL Central"), (1998, 9999, "NL Central")],
     "Pittsburgh Pirates":    [(1969, 1993, "NL East"), (1994, 9999, "NL Central")],
     "St. Louis Cardinals":   [(1969, 1993, "NL East"), (1994, 9999, "NL Central")],
     # NL West
