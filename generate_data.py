@@ -446,7 +446,7 @@ snap_records["ps_record"] = snap_records.apply(
     axis=1,
 )
 snap_records["last_match"]      = snap_records["result"].fillna("")
-snap_records["last_match_date"] = snap_records["actual_game_date"].dt.strftime("%Y-%m-%d")
+snap_records["last_match_date"] = snap_records["actual_game_date"].dt.strftime("%Y-%m-%d").fillna("")
 
 # Index for fast lookup: (season, team, ranking_date) -> dict
 snap_records["key_date"] = snap_records["date_game"]
