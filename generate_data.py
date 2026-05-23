@@ -569,9 +569,9 @@ for s in sorted(ratings["season"].unique()):
         is_playoff_snap = int(rdf["is_playoff_snapshot"].iloc[0])
         label = None
         if is_rs_end:
-            label = "End of Regular Season"
+            label = "End of regular season"
         elif is_ps_end and is_playoff_snap:
-            label = "End of Postseason"
+            label = "End of playoffs"
         teams_snap = []
         for _, r in rdf.iterrows():
             rec = snap_record_lookup.get((s, r["name"], snap_date_ts), {})

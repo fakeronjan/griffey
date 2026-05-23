@@ -335,7 +335,7 @@
     <select id="team-select"><option value="">- Select a team -</option></select>
     <select id="season-select" style="display:none"><option value="all">All seasons</option></select>
     <select id="date-type-select" style="display:none">
-      <option value="eos">End of postseason</option>
+      <option value="eos">End of playoffs</option>
       <option value="eor">End of regular season</option>
     </select>
   </div>
@@ -355,7 +355,7 @@
 
 <!-- GOAT TABLE -->
 <div id="goat" class="tab">
-  <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (full-year answer) and end of postseason (eligibility requires reaching the World Series). Data covers 1961 through the current season.</p>
+  <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (full-year answer) and end of playoffs (eligibility requires reaching the World Series).</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
@@ -587,26 +587,10 @@ async function loadSeason(season) {
     const snaps = currentSeasonData.snapshots;
     const dateSel = document.getElementById('date-filter');
     dateSel.innerHTML = '';
-
-    // Labeled snapshots first (End of Regular Season, End of Postseason), then separator,
-    // then all dates. Matches fleet convention for tournament-end-date prioritization.
-    const labeled = snaps.filter(s => s.label != null);
-    labeled.forEach(snap => {
-      const opt = document.createElement('option');
-      opt.value = snap.date;
-      opt.textContent = `${snap.date} | ${snap.label}`;
-      dateSel.appendChild(opt);
-    });
-    if (labeled.length) {
-      const sep = document.createElement('option');
-      sep.disabled = true;
-      sep.textContent = '----------';
-      dateSel.appendChild(sep);
-    }
     [...snaps].reverse().forEach(snap => {
       const opt = document.createElement('option');
       opt.value = snap.date;
-      opt.textContent = snap.date;
+      opt.textContent = snap.label ? `${snap.date} | ${snap.label}` : snap.date;
       dateSel.appendChild(opt);
     });
 
@@ -1024,7 +1008,7 @@ buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populat
 buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
 buildConfPills('goat-mode-pills',      goatMode,      v => { goatMode = v; renderGoat(); }, [
   { value: 'rs', label: 'End of regular season' },
-  { value: 'ps', label: 'End of postseason' },
+  { value: 'ps', label: 'End of playoffs' },
 ]);
 buildConfPills('ts-view-pills', tsView, v => {
   tsView = v;
