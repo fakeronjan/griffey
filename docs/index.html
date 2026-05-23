@@ -210,6 +210,20 @@
   .result-W-stale { color: #2e7d32; font-weight: 400; }
   .result-L-stale { color: #c62828; font-weight: 400; }
 
+  /* Season chart */
+  #chart-wrap {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  #season-chart {
+    width: 100%;
+    height: 180px;
+    display: block;
+  }
+
   /* Champions / GOAT layout */
   .col-champ  { background: #fffdf3; }
   .col-ru     { background: #fafafa; }
@@ -318,6 +332,15 @@
   <div class="conf-pills" id="ts-conf-pills"></div>
   <div class="controls">
     <select id="team-select"><option value="">- Select a team -</option></select>
+    <select id="season-select"><option value="all">All seasons</option></select>
+    <select id="date-type-select">
+      <option value="all">All dates</option>
+      <option value="eor">End of regular season</option>
+      <option value="eos">End of postseason</option>
+    </select>
+  </div>
+  <div id="chart-wrap" style="display:none">
+    <svg id="season-chart"></svg>
   </div>
   <div id="team-table-wrap"><p class="loading">Select a team above.</p></div>
 </div>
@@ -700,6 +723,15 @@ async function loadTeam(slug) {
       return;
     }
   }
+  const data = teamCache[slug];
+  const seasons = Object.keys(data.seasons).sort().reverse();
+  const seasonSel = document.getElementById('season-select');
+  seasonSel.innerHTML = '<option value="all">All seasons</option>';
+  seasons.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    seasonSel.appendChild(opt);
+  });
   renderTeamTable();
 }
 
@@ -707,44 +739,48 @@ function renderTeamTable() {
   const slug = document.getElementById('team-select').value;
   if (!slug || !teamCache[slug]) return;
   const data = teamCache[slug];
-  const canonical = data.team;
+  const seasonFilter = document.getElementById('season-select').value;
+  const dateType     = document.getElementById('date-type-select').value;
 
-  // One row per season showing both RS-end and PS-end ratings + records.
-  // Newest season first.
-  const seasonKeys = Object.keys(data.seasons).sort().reverse();
-  const tableRows = seasonKeys.map(s => {
-    const seasonData = data.seasons[s];
-    const era = (seasonData.display_name && seasonData.display_name !== canonical) ? seasonData.display_name : '';
+  let rows = [];
+  const seasons = Object.keys(data.seasons).sort();
+  seasons.forEach(s => {
+    if (seasonFilter !== 'all' && s !== seasonFilter) return;
+    data.seasons[s].forEach(g => rows.push({...g, season: s}));
+  });
+
+  // Date-type filter: explicit selection of regular-season-end vs postseason-end snapshot
+  if (dateType === 'eor')      rows = rows.filter(g => g.season_flag === 1);
+  else if (dateType === 'eos') rows = rows.filter(g => g.season_flag === 2);
+
+  drawChart(rows, seasonFilter);
+
+  // For franchises that have changed names, show the era display name beneath the
+  // season number when it differs from the canonical (the team page's identity).
+  const canonical = data.team;
+  const tableRows = [...rows].reverse().map(g => {
+    const era = (g.display_name && g.display_name !== canonical) ? g.display_name : '';
     const seasonCell = era
-      ? `${s}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
-      : s;
-    const finalsStatus = seasonData.ws_champion ? 2 : (seasonData.ws_runner_up ? 1 : 0);
-    const rsRating = seasonData.rs_end_rating != null
-      ? `<span class="rating-cell">${seasonData.rs_end_rating.toFixed(2)}</span> <span style="color:#888;font-size:0.85em">(#${seasonData.rs_end_rank})</span>`
-      : '-';
-    const psRating = (seasonData.ps_end_rating != null && seasonData.playoff_record)
-      ? `<span class="rating-cell">${seasonData.ps_end_rating.toFixed(2)}</span> <span style="color:#888;font-size:0.85em">(#${seasonData.ps_end_rank})</span>`
-      : '-';
+      ? `${g.season}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
+      : g.season;
     return `<tr>
-      <td class="linked season-cell" data-season-link="${s}">${seasonCell}</td>
-      <td class="col-hide-mobile" style="font-size:11px">${leagueBadge(seasonData.league, finalsStatus)}</td>
-      <td class="col-hide-mobile" style="font-size:11px;color:#666">${seasonData.division || ''}</td>
-      <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(seasonData.regular_record, seasonData.playoff_record)}</td>
-      <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${rsRating}</td>
-      <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${psRating}</td>
-      <td class="col-hide-mobile" style="font-size:11px">${finishBadge(finalsStatus)}</td>
-    </tr>`;
+    <td style="white-space:nowrap;color:#888;font-size:12px">${g.date}</td>
+    <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}</td>
+    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, false)}</td>
+    <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record)}</td>
+    <td class="rank-cell">${g.rank}</td>
+    <td>${ratingBar(g.rating)}</td>
+    <td class="col-hide-mobile" style="font-size:11px">${leagueBadge(g.league || data.league, g.finals_status)}</td>
+    <td class="col-hide-mobile" style="font-size:11px">${finishBadge(g.finals_status)}</td>
+  </tr>`;
   }).join('');
 
   document.getElementById('team-table-wrap').innerHTML = `
     <table>
       <thead><tr>
-        <th>Season</th>
+        <th>Date</th><th>Season</th><th>Last Game</th>
+        <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
         <th class="col-hide-mobile">League</th>
-        <th class="col-hide-mobile">Division</th>
-        <th>W-L (Pct)</th>
-        <th>RS-End Rating</th>
-        <th>PS-End Rating</th>
         <th class="col-hide-mobile">Honors</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
@@ -752,7 +788,66 @@ function renderTeamTable() {
   attachLinks();
 }
 
+function drawChart(rows, seasonFilter) {
+  const wrap = document.getElementById('chart-wrap');
+  if (rows.length < 2) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  const svg = document.getElementById('season-chart');
+  const W = svg.parentElement.clientWidth - 32;
+  const H = 180;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const CHART_MIN = -5, CHART_MAX = 5;
+  const CTOP = 10, CBOT = 152;
+
+  const px = (i) => (i / (rows.length - 1)) * (W - 20) + 10;
+  const py = (r) => CBOT - ((r - CHART_MIN) / (CHART_MAX - CHART_MIN)) * (CBOT - CTOP);
+
+  const zeroY  = py(0);
+  const points = rows.map((r, i) => `${px(i).toFixed(1)},${py(r.rating).toFixed(1)}`).join(' ');
+
+  const isSingle = seasonFilter !== 'all';
+  const MONTHS   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const ticks = [], xlabels = [];
+  const seen = {};
+  let lastX = -99;
+
+  rows.forEach((r, i) => {
+    const key   = isSingle ? r.date.substring(0, 7) : r.date.substring(0, 4);
+    const label = isSingle
+      ? MONTHS[parseInt(r.date.substring(5, 7)) - 1]
+      : r.date.substring(0, 4);
+    if (!seen[key]) {
+      seen[key] = true;
+      const x = parseFloat(px(i).toFixed(1));
+      if (x - lastX >= 24) {
+        lastX = x;
+        ticks.push(`<line x1="${x}" y1="${CBOT + 2}" x2="${x}" y2="${CBOT + 6}" stroke="#bbb" stroke-width="1"/>`);
+        xlabels.push(`<text x="${x}" y="${CBOT + 16}" font-size="9" fill="#999" text-anchor="middle">${label}</text>`);
+      }
+    }
+  });
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="lineGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${H}">
+        <stop offset="${(zeroY / H - 0.0001).toFixed(4)}" stop-color="#1a6b8a"/>
+        <stop offset="${(zeroY / H + 0.0001).toFixed(4)}" stop-color="#ff6eb4"/>
+      </linearGradient>
+    </defs>
+    <line x1="10" y1="${zeroY.toFixed(1)}" x2="${(W - 10).toFixed(1)}" y2="${zeroY.toFixed(1)}"
+          stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="10" y1="${CBOT + 2}" x2="${(W - 10).toFixed(1)}" y2="${CBOT + 2}"
+          stroke="#ddd" stroke-width="1"/>
+    ${ticks.join('')}
+    ${xlabels.join('')}
+    <polyline points="${points}" fill="none" stroke="url(#lineGrad)" stroke-width="2.5" stroke-linejoin="round"/>`;
+}
+
 document.getElementById('team-select').addEventListener('change', e => loadTeam(e.target.value));
+document.getElementById('season-select').addEventListener('change', renderTeamTable);
+document.getElementById('date-type-select').addEventListener('change', renderTeamTable);
 
 // Champions
 let championsData = null;

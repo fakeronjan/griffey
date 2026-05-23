@@ -572,40 +572,36 @@ for team in sorted(ratings["name"].unique()):
     seasons_dict = {}
     for s, sub in tdf.groupby("season"):
         s = int(s)
-        rs_row = sub[sub["is_rs_end"] == 1].iloc[0] if (sub["is_rs_end"] == 1).any() else None
-        ps_row = sub[sub["is_ps_end"] == 1].iloc[0] if (sub["is_ps_end"] == 1).any() else None
-        record = rec_lookup.get((s, team))
-        entries = [
-            {
-                "date":   str(r["ranking_date"].date()),
-                "rank":   int(r["rank"]),
-                "rating": round(float(r["rating"]), 3),
-                "display_name": display_name(team, s),
-                "is_rs_end": int(r["is_rs_end"]),
-                "is_ps_end": int(r["is_ps_end"]),
-                "is_playoff_snap": int(r["is_playoff_snapshot"]),
-            }
-            for _, r in sub.sort_values("ranking_date").iterrows()
-        ]
-        # Per-season summary block
-        seasons_dict[str(s)] = {
-            "display_name":     display_name(team, s),
-            "league":           league(team, s),
-            "division":         division(team, s),
-            "regular_record":   record["rs_record"] if record is not None else "",
-            "playoff_record":   record["ps_record"] if record is not None else "",
-            "rs_end_rating":    round(float(rs_row["rating"]), 3) if rs_row is not None else None,
-            "rs_end_rank":      int(rs_row["rank"]) if rs_row is not None else None,
-            "ps_end_rating":    round(float(ps_row["rating"]), 3) if ps_row is not None else None,
-            "ps_end_rank":      int(ps_row["rank"]) if ps_row is not None else None,
-            "ws_champion":      1 if ws_results.get(s, {}).get("champion") == team else 0,
-            "ws_runner_up":     1 if ws_results.get(s, {}).get("runner_up") == team else 0,
-            "entries":          entries,
-        }
+        ws_info = ws_results.get(s, {})
+        finals_status = 2 if ws_info.get("champion") == team else (1 if ws_info.get("runner_up") == team else 0)
+        # Per-snapshot entries (matches DUNCAN/DILLON Team Summary structure exactly:
+        # one row per snapshot, with rolling record + last match + season_flag).
+        # season_flag follows DUNCAN/DILLON convention: 0 = mid-season, 1 = end of
+        # regular season, 2 = end of postseason.
+        entries = []
+        for _, r in sub.sort_values("ranking_date").iterrows():
+            snap_date_ts = r["ranking_date"]
+            rec = snap_record_lookup.get((s, team, snap_date_ts), {})
+            sf = 2 if int(r["is_ps_end"]) == 1 else (1 if int(r["is_rs_end"]) == 1 else 0)
+            entries.append({
+                "date":            str(snap_date_ts.date()),
+                "rank":            int(r["rank"]) if not pd.isna(r["rank"]) else None,
+                "rating":          round(float(r["rating"]), 3),
+                "display_name":    display_name(team, s),
+                "league":          league(team, s),
+                "division":        division(team, s),
+                "regular_record":  rec.get("rs_record", "0-0"),
+                "playoff_record":  rec.get("ps_record", ""),
+                "last_match":      rec.get("last_match", ""),
+                "last_match_date": rec.get("last_match_date", ""),
+                "finals_status":   finals_status,
+                "season_flag":     sf,
+            })
+        seasons_dict[str(s)] = entries
     with open(f"docs/data/teams/{team_slug}.json", "w") as f:
         json.dump({
             "team":         team,
-            "display_name": display_name(team, ratings["season"].max()),
+            "display_name": current_display_name(team),
             "league":       league(team, ratings["season"].max()),
             "seasons":      seasons_dict,
         }, f, separators=(",", ":"))
