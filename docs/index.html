@@ -199,6 +199,7 @@
   .finish-champion { background: #c8a84b; color: #1a6b8a; }
   .finish-runner   { background: #ddd; color: #444; }
   .conf-pill       { background: #f4f4f4; color: #555; border: 1px solid #e8e8e8; }
+  .covid-tag       { background: #fde0e0; color: #c62828; border: 1px solid #f5b3b3; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; letter-spacing: 0.5px; }
 
   .last-match-cell {
     font-size: 12px;
@@ -324,6 +325,9 @@
   <p class="data-note" id="warmup-note" style="display:none">
     Note: ratings need a 121 game-day warm-up window, so the 1961 season's first ranked snapshot is August 14.
   </p>
+  <p class="data-note" id="covid-note" style="display:none;color:#c62828">
+    Note: 2020 was a COVID-shortened 60-game regular season with regional-only play and an expanded 16-team bubble postseason. Small sample size and limited cross-region games make 2020 ratings less reliable than other seasons.
+  </p>
   <div id="standings-table-wrap"><p class="loading">Loading standings...</p></div>
 </div>
 
@@ -356,6 +360,9 @@
 <!-- GOAT TABLE -->
 <div id="goat" class="tab">
   <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (full-year answer) and end of playoffs (eligibility requires reaching the World Series).</p>
+  <p class="data-note" id="goat-covid-note" style="display:none;color:#c62828">
+    Note: 2020 was a COVID-shortened 60-game regular season with regional-only play and an expanded 16-team bubble postseason. Small sample size and limited cross-region games make 2020 ratings less reliable than other seasons.
+  </p>
   <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
@@ -606,6 +613,8 @@ async function loadSeason(season) {
     // Warm-up note for 1961 (first season, first 121 game-days are warm-up)
     document.getElementById('warmup-note').style.display =
       (parseInt(season) === 1961) ? 'block' : 'none';
+    document.getElementById('covid-note').style.display =
+      (parseInt(season) === 2020) ? 'block' : 'none';
   } catch(e) {
     document.getElementById('standings-table-wrap').innerHTML =
       `<p class="error">Could not load season data.</p>`;
@@ -978,15 +987,19 @@ function renderGoat() {
     ? data
     : data.filter(t => t.league === goatConf);
 
+  document.getElementById('goat-covid-note').style.display =
+    teams.some(t => t.season === 2020) ? 'block' : 'none';
+
   const rows = teams.map(t => {
     const label = t.display_name || t.team;
     const slug = nameToSlug[t.team] || nameToSlug[label];
     const teamTd = slug
       ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${t.season}">${label}</td>`
       : `<td class="team-cell">${label}</td>`;
+    const covidTag = t.season === 2020 ? `<span class="covid-tag">COVID</span>` : '';
     return `<tr>
       <td class="rank-cell">${t.rank}</td>
-      <td class="season-cell linked" data-season-link="${t.season}" style="text-align:center">${t.season}</td>
+      <td class="season-cell linked" data-season-link="${t.season}" style="text-align:center;white-space:nowrap">${t.season}${covidTag}</td>
       ${teamTd}
       <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status, t.division, t.division_winner)}</td>
       <td>${ratingBar(t.rating)}</td>
