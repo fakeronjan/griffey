@@ -1,0 +1,5 @@
+.DS_Store
+__pycache__/
+*.pyc
+# Raw Retrosheet download — regenerable from URL each run, no need to track
+loaded_mlb_games.csv

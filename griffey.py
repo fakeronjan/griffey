@@ -1,0 +1,492 @@
+"""
+GRIFFEY — MLB power ratings via WLS Massey solver.
+
+Named after Ken Griffey Jr., Hall-of-Famer who played for Cincinnati 2000-2008.
+
+Model stack mirrors the WLS-template fleet (DUNCAN/LOBO/DILLON/SALAAM):
+  - Homebrew WLS Massey solver (no rankit dependency)
+  - Margin cap to suppress blowouts
+  - Per-game HCA on raw run margin
+  - Season-aware rolling window (game-days)
+  - Linear recency decay across the window
+
+Data source: Retrosheet gameinfo.csv (https://www.retrosheet.org/downloads/gameinfo.zip).
+Covers every MLB game from 1898 to present, updated annually.
+"""
+
+import io
+import os
+import zipfile
+from datetime import datetime
+from urllib.request import urlopen
+
+import numpy as np
+import pandas as pd
+
+# =========================================================
+# CONFIGURATION
+# =========================================================
+
+MIN_SEASON = 1961             # Expansion era anchor (162-game season + AL/NL post-expansion)
+
+# Season-aware rolling window: window (game-days) = WINDOW_MULTIPLIER * games-per-team-per-season.
+# At 0.75, a 162-game MLB season gets a 121-day window (~67% of season). Shortened seasons
+# (lockouts, COVID) get proportionally smaller windows automatically.
+WINDOW_MULTIPLIER = 0.75
+
+HOME_COURT_ADJUSTMENT = 0.1   # raw-run home advantage (modern-era empirical: ~0.09-0.13 runs)
+
+# Margin transform: cap at 10 runs. Captures ~98% of MLB games uncapped — only the most
+# extreme blowouts (often garbage-time bullpen scenarios) get trimmed.
+MARGIN_TRANSFORM = "cap"
+MARGIN_CAP = 10
+
+# WLS observation weights: recency × tier × match-type. MLB has no tier weights (all games
+# are full competitive games; no friendlies). Just recency decay across the window.
+WEIGHTING_MODE = "wls"
+
+# Re-process the most recent N game-days on every run so late-arriving data is absorbed.
+# MLB games are usually finalized within a few hours, but September call-ups + spring
+# training + postseason can push edits.
+RECOMPUTE_TAIL_DAYS = 7
+
+# Regular-season games per team per season. MLB has been 162 since 1961-1962, with these
+# documented shortenings:
+#   1972: ~155-156 (player strike)
+#   1981: ~108 (mid-season strike, split season)
+#   1994: ~113 (August strike, no postseason)
+#   1995: 144 (continued strike, delayed start)
+#   2020: 60 (COVID)
+REGULAR_SEASON_GAMES = {
+    **{y: 162 for y in range(1961, 2030)},
+    1972: 156,
+    1981: 108,
+    1994: 113,
+    1995: 144,
+    2020: 60,
+}
+
+# Retrosheet download URL — single zip with one CSV inside.
+RETROSHEET_URL = "https://retrosheet.org/downloads/gameinfo.zip"
+LOADED_GAMES_CSV = "loaded_mlb_games.csv"
+ALL_GAMES_CSV    = "all_mlb_games.csv"
+
+# Retrosheet uses 3-letter team codes. Map to canonical full names. Franchises that
+# relocated keep separate identities (per fleet policy: move = lose history).
+# Same-market rebrands collapse to canonical current name.
+RETROSHEET_TEAM = {
+    # American League
+    "ANA": "Los Angeles Angels",     # Anaheim Angels 1997-2004 (same-market with LA Angels)
+    "BAL": "Baltimore Orioles",
+    "BOS": "Boston Red Sox",
+    "CAL": "Los Angeles Angels",     # California Angels 1966-1996 (same-market)
+    "CHA": "Chicago White Sox",
+    "CLE": "Cleveland Guardians",    # Same-market rebrand: Indians 1915-2021 -> Guardians 2022+
+    "DET": "Detroit Tigers",
+    "HOU": "Houston Astros",         # AL since 2013; Colt .45s 1962-64 -> Astros 1965+ (same-market)
+    "KCA": "Kansas City Royals",
+    "LAA": "Los Angeles Angels",
+    "MIN": "Minnesota Twins",
+    "NYA": "New York Yankees",
+    "OAK": "Oakland Athletics",      # Will eventually move to Vegas
+    "SEA": "Seattle Mariners",
+    "TBA": "Tampa Bay Rays",         # Devil Rays 1998-2007 -> Rays 2008+ (same-market)
+    "TEX": "Texas Rangers",          # Senators relocated, kept separate
+    "TOR": "Toronto Blue Jays",
+    "WS2": "Texas Rangers",          # Washington Senators (expansion) 1961-71 -> Rangers
+    # National League
+    "ARI": "Arizona Diamondbacks",
+    "ATL": "Atlanta Braves",
+    "CHN": "Chicago Cubs",
+    "CIN": "Cincinnati Reds",
+    "COL": "Colorado Rockies",
+    "FLO": "Miami Marlins",          # Florida Marlins 1993-2011 -> Miami Marlins (same-market)
+    "MIA": "Miami Marlins",
+    "MIL": "Milwaukee Brewers",      # NL since 1998
+    "LAN": "Los Angeles Dodgers",
+    "MON": "Montreal Expos",         # 1969-2004; relocated to DC, kept SEPARATE per fleet policy
+    "NYN": "New York Mets",
+    "PHI": "Philadelphia Phillies",
+    "PIT": "Pittsburgh Pirates",
+    "SDN": "San Diego Padres",
+    "SFN": "San Francisco Giants",
+    "SLN": "St. Louis Cardinals",
+    "WAS": "Washington Nationals",
+    # Historical franchises within our 1961+ window (kept separate per fleet relocation policy)
+    "KC1": "Kansas City Athletics",  # Athletics 1955-1967 (post-Philadelphia, pre-Oakland)
+    "MLN": "Milwaukee Braves",       # Braves 1953-1965 (post-Boston, pre-Atlanta)
+    "SE1": "Seattle Pilots",         # 1969 only, became Brewers in 1970
+}
+
+# Confederation/division mapping: AL = American League, NL = National League. Era-aware
+# since some teams switched (Brewers NL since 1998, Astros AL since 2013).
+TEAM_LEAGUE = {
+    # AL teams (always AL)
+    "Los Angeles Angels": "AL", "Baltimore Orioles": "AL", "Boston Red Sox": "AL",
+    "Chicago White Sox": "AL", "Cleveland Guardians": "AL", "Detroit Tigers": "AL",
+    "Kansas City Royals": "AL", "Minnesota Twins": "AL", "New York Yankees": "AL",
+    "Oakland Athletics": "AL", "Seattle Mariners": "AL", "Tampa Bay Rays": "AL",
+    "Texas Rangers": "AL", "Toronto Blue Jays": "AL",
+    # NL teams (always NL)
+    "Arizona Diamondbacks": "NL", "Atlanta Braves": "NL", "Chicago Cubs": "NL",
+    "Cincinnati Reds": "NL", "Colorado Rockies": "NL", "Miami Marlins": "NL",
+    "Los Angeles Dodgers": "NL", "New York Mets": "NL", "Philadelphia Phillies": "NL",
+    "Pittsburgh Pirates": "NL", "San Diego Padres": "NL", "San Francisco Giants": "NL",
+    "St. Louis Cardinals": "NL", "Washington Nationals": "NL",
+    # Switchers — Brewers AL 1969-1997 then NL; Astros NL 1962-2012 then AL
+    # Era-aware league should live in generate_data.py via per-(team,season) lookup;
+    # this dict gives "current" league for the standings filter.
+    "Milwaukee Brewers": "NL",
+    "Houston Astros": "AL",
+    # Historical franchises in our window (kept separate from successors per relocation policy)
+    "Kansas City Athletics": "AL",
+    "Milwaukee Braves": "NL",
+    "Seattle Pilots": "AL",
+    "Montreal Expos": "NL",
+}
+
+
+# =========================================================
+# DATA ACQUISITION
+# =========================================================
+
+def fetch_retrosheet():
+    """Download the Retrosheet gameinfo zip and return a DataFrame of all games."""
+    print(f"Fetching Retrosheet game info from {RETROSHEET_URL}...")
+    with urlopen(RETROSHEET_URL) as resp:
+        data = resp.read()
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        with z.open("gameinfo.csv") as f:
+            df = pd.read_csv(f, low_memory=False)
+    print(f"  Fetched {len(df):,} rows.")
+    return df
+
+
+def prepare_game_data(raw_df):
+    """Convert Retrosheet gameinfo rows into our master game frame."""
+    df = raw_df.copy()
+    # Parse date YYYYMMDD -> datetime
+    df["date_game"] = pd.to_datetime(df["date"], format="%Y%m%d", errors="coerce")
+    df["year"] = df["date_game"].dt.year
+    df["season"] = df["year"]  # MLB season = calendar year (no cross-year wraparound)
+
+    # Filter to MIN_SEASON+ and games with valid scores
+    df = df[df["year"] >= MIN_SEASON].copy()
+    df["hruns"] = pd.to_numeric(df["hruns"], errors="coerce")
+    df["vruns"] = pd.to_numeric(df["vruns"], errors="coerce")
+    df = df.dropna(subset=["hruns", "vruns", "date_game"])
+    df["hruns"] = df["hruns"].astype(int)
+    df["vruns"] = df["vruns"].astype(int)
+
+    # Map team codes -> canonical full names. Any unmapped code = surface a warning.
+    df["home_team_name"]    = df["hometeam"].map(RETROSHEET_TEAM)
+    df["visitor_team_name"] = df["visteam"].map(RETROSHEET_TEAM)
+    unmapped_home = df.loc[df["home_team_name"].isna(), "hometeam"].unique()
+    unmapped_away = df.loc[df["visitor_team_name"].isna(), "visteam"].unique()
+    unmapped = sorted(set(unmapped_home) | set(unmapped_away))
+    if unmapped:
+        print(f"WARN: unmapped Retrosheet team codes (dropping {df['home_team_name'].isna().sum() + df['visitor_team_name'].isna().sum()} rows): {unmapped}")
+    df = df.dropna(subset=["home_team_name", "visitor_team_name"]).copy()
+
+    # Margins (home-team perspective)
+    df["home_pts"] = df["hruns"]
+    df["visitor_pts"] = df["vruns"]
+    df["home_margin"] = df["hruns"] - df["vruns"]
+    df["visitor_margin"] = -df["home_margin"]
+
+    # Win flags
+    df["home_win"] = (df["home_margin"] > 0).astype(int)
+    df["visitor_win"] = (df["home_margin"] < 0).astype(int)
+    # MLB has no ties in modern era — extra innings always determine a winner. (Pre-1969
+    # there were occasional ties before suspended-game rules tightened.)
+    df["is_tie"] = (df["home_margin"] == 0).astype(int)
+
+    # Sort + dedupe
+    df = df.sort_values("date_game").drop_duplicates(subset=["gid"], keep="first")
+
+    # Date IDs
+    df["grouped_date_id"] = df.groupby("date_game").ngroup() + 1
+    df["unique_game_id"]  = np.arange(1, len(df) + 1)
+
+    # Result strings for last-game display
+    df["home_wl"]      = np.where(df["home_win"] == 1, "W", np.where(df["is_tie"] == 1, "T", "L"))
+    df["visitor_wl"]   = np.where(df["visitor_win"] == 1, "W", np.where(df["is_tie"] == 1, "T", "L"))
+    df["home_result"] = (
+        df["home_wl"] + " vs. " + df["visitor_team_name"] + " "
+        + df["home_pts"].astype(str) + "-" + df["visitor_pts"].astype(str)
+    )
+    df["visitor_result"] = (
+        df["visitor_wl"] + " @ " + df["home_team_name"] + " "
+        + df["visitor_pts"].astype(str) + "-" + df["home_pts"].astype(str)
+    )
+
+    out_cols = [
+        "gid", "season", "year", "date_game",
+        "visitor_team_name", "home_team_name",
+        "visitor_pts", "home_pts",
+        "visitor_margin", "home_margin",
+        "visitor_win", "home_win", "is_tie",
+        "grouped_date_id", "unique_game_id",
+        "home_wl", "visitor_wl",
+        "home_result", "visitor_result",
+    ]
+    df = df[out_cols]
+    df.to_csv(ALL_GAMES_CSV, index=False)
+    print(f"  Prepared {len(df):,} games, {df['season'].min()}-{df['season'].max()}.")
+    return df
+
+
+# =========================================================
+# WLS MASSEY SOLVER
+# =========================================================
+
+def _apply_margin_transform(margin, transform, cap):
+    """Sign-preserving transform applied to (raw_margin - hca)."""
+    m = np.asarray(margin, dtype=float)
+    if transform == "raw":
+        return m
+    if transform == "cap":
+        return np.clip(m, -cap, cap)
+    raise ValueError(f"Unknown MARGIN_TRANSFORM: {transform}")
+
+
+def _connected_components(teams, edges):
+    """Find connected components in the team-game graph.
+    teams: list of team names. edges: iterable of (home_name, away_name) tuples.
+    Returns dict mapping team_name -> component_id (0-indexed)."""
+    parent = {t: t for t in teams}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]  # path compression
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for h, a in edges:
+        union(h, a)
+
+    # Map roots to component IDs
+    roots = {}
+    out = {}
+    for t in teams:
+        r = find(t)
+        if r not in roots:
+            roots[r] = len(roots)
+        out[t] = roots[r]
+    return out
+
+
+def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
+    """
+    Solve for team Massey ratings on a single rolling window.
+
+    Builds X (n_games × n_teams) with +1 for home, -1 for visitor, y from the transformed
+    HCA-adjusted home margin, and W from the recency weights. Solves min sum_i w_i * (X_i r - y_i)^2
+    with a zero-sum constraint enforced as a high-weight row PER CONNECTED COMPONENT (not just
+    a single global constraint). This handles MLB's 2020 COVID regional schedule cleanly —
+    when the East/Central/West components don't connect via cross-region games, each component
+    gets its own zero-sum anchor instead of all three sloshing around one global mean.
+
+    WLS via row-scaling: multiplying both X and y by sqrt(w_i) turns the weighted problem
+    into an ordinary lstsq.
+    """
+    teams = sorted(set(window_df["home_team_name"]) | set(window_df["visitor_team_name"]))
+    team_idx = {t: i for i, t in enumerate(teams)}
+    n_teams = len(teams)
+    n_games = len(window_df)
+
+    home_pts = window_df["home_pts"].to_numpy(dtype=float)
+    visitor_pts = window_df["visitor_pts"].to_numpy(dtype=float)
+    weights = window_df["date_weight"].to_numpy(dtype=float)
+    home_names = window_df["home_team_name"].to_numpy()
+    visitor_names = window_df["visitor_team_name"].to_numpy()
+
+    # Connected components — one zero-sum constraint per component
+    comp_map = _connected_components(teams, zip(home_names, visitor_names))
+    n_components = max(comp_map.values()) + 1 if comp_map else 1
+    teams_by_comp = [[] for _ in range(n_components)]
+    for t, c in comp_map.items():
+        teams_by_comp[c].append(t)
+
+    n_rows = n_games + n_components
+    X = np.zeros((n_rows, n_teams))
+    y = np.zeros(n_rows)
+    w = np.zeros(n_rows)
+
+    raw_margin = home_pts - visitor_pts - hca
+    transformed = _apply_margin_transform(raw_margin, margin_transform, margin_cap)
+
+    for i in range(n_games):
+        X[i, team_idx[home_names[i]]] = 1.0
+        X[i, team_idx[visitor_names[i]]] = -1.0
+
+    if weighting_mode == "wls":
+        y[:n_games] = transformed
+        w[:n_games] = weights
+    else:
+        raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
+
+    # One zero-sum row per connected component.
+    for c, comp_teams in enumerate(teams_by_comp):
+        row = n_games + c
+        for t in comp_teams:
+            X[row, team_idx[t]] = 1.0
+        y[row] = 0.0
+        w[row] = 1.0e8
+
+    sqrt_w = np.sqrt(w)
+    Xw = X * sqrt_w[:, None]
+    yw = y * sqrt_w
+    r, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
+
+    out = pd.DataFrame({"name": teams, "rating": r, "component": [comp_map[t] for t in teams]})
+    out["rank"] = out["rating"].rank(ascending=False, method="min").astype(int)
+    return out
+
+
+def _window_for_season(season):
+    """Season-aware window size: WINDOW_MULTIPLIER × regular-season games per team."""
+    reg_games = REGULAR_SEASON_GAMES.get(int(season), 162)
+    return int(round(reg_games * WINDOW_MULTIPLIER))
+
+
+_MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
+
+
+# =========================================================
+# RATING LOOP
+# =========================================================
+
+def compute_ratings(master_df, existing_ratings_df):
+    """
+    Compute per-game-day Massey power ratings using a season-aware rolling window
+    (WINDOW_MULTIPLIER × games-per-team-this-season). Skips dates already present in
+    existing_ratings_df. Re-processes the most recent RECOMPUTE_TAIL_DAYS ranking_ids
+    each run to absorb late-arriving data.
+    """
+    max_date_id = int(master_df["grouped_date_id"].max())
+    min_date_id = _MIN_WINDOW
+
+    if len(existing_ratings_df):
+        all_ids = sorted(existing_ratings_df["ranking_id"].unique())
+        if len(all_ids) > RECOMPUTE_TAIL_DAYS:
+            tail_threshold = all_ids[-RECOMPUTE_TAIL_DAYS]
+            n_dropped = int((existing_ratings_df["ranking_id"] >= tail_threshold).sum())
+            existing_ratings_df = existing_ratings_df[
+                existing_ratings_df["ranking_id"] < tail_threshold
+            ].copy()
+            print(f"  Re-processing tail {RECOMPUTE_TAIL_DAYS} game-days "
+                  f"({n_dropped:,} rows dropped from ratings cache).")
+        max_ranked = int(existing_ratings_df["ranking_id"].max()) if len(existing_ratings_df) else -1
+        min_ranked = int(existing_ratings_df["ranking_id"].min()) if len(existing_ratings_df) else -1
+    else:
+        max_ranked, min_ranked = -1, -1
+
+    print("Running GRIFFEY ratings for new data...")
+    new_frames = []
+
+    # Per-game-day -> season lookup for window sizing
+    rid_to_season = (
+        master_df.sort_values("grouped_date_id")
+                 .drop_duplicates("grouped_date_id", keep="last")
+                 .set_index("grouped_date_id")["season"]
+                 .to_dict()
+    )
+
+    last_printed_ym = None
+    for i in range(min_date_id, max_date_id + 1):
+        if min_ranked <= i <= max_ranked:
+            continue
+
+        season_for_window = rid_to_season.get(i)
+        if season_for_window is None:
+            prior_ids = [k for k in rid_to_season if k < i]
+            season_for_window = rid_to_season[max(prior_ids)] if prior_ids else MIN_SEASON
+        window_size = _window_for_season(season_for_window)
+
+        # Per-season window-fill gate — don't publish until this season's window is full.
+        if i < window_size:
+            continue
+
+        window = master_df[
+            (master_df["grouped_date_id"] >= i - (window_size - 1)) &
+            (master_df["grouped_date_id"] <= i)
+        ].copy()
+
+        window["date_weight"] = (window["grouped_date_id"] - i + window_size) / window_size
+
+        current_date = window["date_game"].max()
+        season = window["season"].max()
+
+        # Throttled progress: print once per month rather than per game-day
+        current_ym = (current_date.year, current_date.month)
+        if current_ym != last_printed_ym:
+            pct = (i - min_date_id) / max(1, max_date_id - min_date_id) * 100
+            print(f"  Ratings: {current_date.strftime('%B %Y')} ({pct:.0f}% complete)")
+            last_printed_ym = current_ym
+
+        try:
+            ranked = _solve_massey(
+                window,
+                hca=HOME_COURT_ADJUSTMENT,
+                weighting_mode=WEIGHTING_MODE,
+                margin_transform=MARGIN_TRANSFORM,
+                margin_cap=MARGIN_CAP,
+            )
+        except Exception as e:
+            print(f"  [skip] grouped_date_id {i} ({current_date.date()}): {e}")
+            continue
+
+        ranked["ranking_date"] = current_date
+        ranked["ranking_id"]   = i
+        ranked["season"]       = season
+        new_frames.append(ranked)
+
+    if new_frames:
+        ratings_df = pd.concat([existing_ratings_df] + new_frames, axis=0, sort=False).reset_index(drop=True)
+    else:
+        ratings_df = existing_ratings_df.copy()
+    ratings_df.sort_values(["ranking_id", "name"], inplace=True)
+    ratings_df.drop_duplicates(keep="first", inplace=True)
+    ratings_df["ranking_date"] = pd.to_datetime(ratings_df["ranking_date"]).dt.date
+
+    # MLB cache is large but compressible — use gzip like MESSI
+    ratings_df.to_csv("griffey_ratings.csv.gz", index=False, compression="gzip")
+    print(f"griffey_ratings.csv.gz saved ({len(ratings_df):,} rows)")
+    return ratings_df
+
+
+# =========================================================
+# MAIN
+# =========================================================
+
+if __name__ == "__main__":
+    # Load raw games (cached locally to avoid hammering Retrosheet every run)
+    if os.path.exists(LOADED_GAMES_CSV):
+        raw = pd.read_csv(LOADED_GAMES_CSV, low_memory=False)
+        print(f"Loaded {len(raw):,} games from local cache.")
+    else:
+        raw = fetch_retrosheet()
+        raw.to_csv(LOADED_GAMES_CSV, index=False)
+        print(f"Cached raw games to {LOADED_GAMES_CSV}")
+
+    master = prepare_game_data(raw)
+    print(f"\nMargin sanity: mean home margin = {master['home_margin'].mean():+.3f}, home win rate = {master['home_win'].mean()*100:.1f}%")
+
+    # Ratings (incremental — load existing cache if present)
+    try:
+        existing_ratings = pd.read_csv("griffey_ratings.csv.gz")
+    except FileNotFoundError:
+        existing_ratings = pd.DataFrame(columns=["ranking_id", "ranking_date", "season", "name", "rating", "rank"])
+    ratings = compute_ratings(master, existing_ratings)
+
+    # Quick smoke: top 10 at latest snapshot
+    latest_id = ratings["ranking_id"].max()
+    latest = ratings[ratings["ranking_id"] == latest_id].sort_values("rating", ascending=False)
+    print(f"\nTop 10 at latest snapshot ({ratings[ratings['ranking_id']==latest_id]['ranking_date'].iloc[0]}):")
+    print(latest.head(10)[["rank", "name", "rating"]].to_string(index=False))
