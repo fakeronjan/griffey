@@ -292,7 +292,20 @@ print("\nComputing per-season RS end dates...")
 rs_end_by_season = {}
 rs_games = games[~games["is_playoff_game_flag"]]
 for s, sub in rs_games.groupby("season"):
-    rs_end_by_season[int(s)] = sub["date_game"].max()
+    # Only call a season's RS "ended" once a majority of teams have hit the
+    # full RS game count. Otherwise (in-progress season), the latest date is
+    # just today, and we shouldn't flag today's snapshot as "End of regular
+    # season". Confirmed-complete seasons either have postseason games already
+    # logged or have enough teams finished.
+    th = REGULAR_SEASON_GAMES.get(int(s), 162)
+    home = sub[["date_game", "home_team_name"]].rename(columns={"home_team_name": "team"})
+    away = sub[["date_game", "visitor_team_name"]].rename(columns={"visitor_team_name": "team"})
+    g = pd.concat([home, away])
+    team_totals = g.groupby("team").size()
+    n_teams_done = int((team_totals >= th).sum())
+    has_ps = ((games["season"] == s) & games["is_playoff_game_flag"]).any()
+    if has_ps or n_teams_done >= 15:  # >= ~half of MLB
+        rs_end_by_season[int(s)] = sub["date_game"].max()
 for s, sub in games.groupby("season"):
     if int(s) in rs_end_by_season:
         continue
