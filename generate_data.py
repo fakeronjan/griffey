@@ -423,7 +423,12 @@ unique_snaps = unique_snaps.rename(columns={"name": "team", "ranking_date": "dat
 unique_snaps_sorted  = unique_snaps.sort_values("date_game").reset_index(drop=True)
 team_games_for_merge = team_games_sorted[
     ["team", "season", "date_game", "result", "cum_rs_w", "cum_rs_l", "cum_ps_w", "cum_ps_l"]
-].sort_values("date_game").reset_index(drop=True)
+].copy()
+# Preserve the actual game date through merge_asof (the merge's join column 'date_game'
+# becomes the snapshot date on the output side, so without this we'd lose the team's
+# actual last-played date).
+team_games_for_merge["actual_game_date"] = team_games_for_merge["date_game"]
+team_games_for_merge = team_games_for_merge.sort_values("date_game").reset_index(drop=True)
 
 snap_records = pd.merge_asof(
     unique_snaps_sorted, team_games_for_merge,
@@ -441,7 +446,7 @@ snap_records["ps_record"] = snap_records.apply(
     axis=1,
 )
 snap_records["last_match"]      = snap_records["result"].fillna("")
-snap_records["last_match_date"] = snap_records["date_game"].dt.strftime("%Y-%m-%d")
+snap_records["last_match_date"] = snap_records["actual_game_date"].dt.strftime("%Y-%m-%d")
 
 # Index for fast lookup: (season, team, ranking_date) -> dict
 snap_records["key_date"] = snap_records["date_game"]

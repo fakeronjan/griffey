@@ -759,11 +759,17 @@ function renderTeamTable() {
   const seasons = Object.keys(data.seasons).sort();
   let seasonFilter;
   if (tsView === 'single') {
-    // One-season view: filter to selected season, show all dates within it.
+    // One-season view: filter to selected season AND only game-days for this team
+    // (a team plays ~162 of ~190 season-days; off-days would otherwise render as
+    // repeated stale rows). Game-day = snapshot date matches team's last_match_date.
     seasonFilter = document.getElementById('season-select').value;
     seasons.forEach(s => {
       if (seasonFilter !== 'all' && s !== seasonFilter) return;
-      data.seasons[s].forEach(g => rows.push({...g, season: s}));
+      data.seasons[s].forEach(g => {
+        if (g.last_match_date && g.last_match_date === g.date) {
+          rows.push({...g, season: s});
+        }
+      });
     });
   } else {
     // Cross-season summary view: all seasons, but filtered to one snapshot per season
