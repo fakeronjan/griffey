@@ -96,6 +96,7 @@ RETROSHEET_TEAM = {
     "MIN": "Minnesota Twins",
     "NYA": "New York Yankees",
     "OAK": "Oakland Athletics",      # Will eventually move to Vegas
+    "ATH": "Oakland Athletics",      # Retrosheet code for Sacramento Athletics 2025+ (same franchise)
     "SEA": "Seattle Mariners",
     "TBA": "Tampa Bay Rays",         # Devil Rays 1998-2007 -> Rays 2008+ (same-market)
     "TEX": "Texas Rangers",          # Senators relocated, kept separate
@@ -258,6 +259,13 @@ def fetch_mlb_stats_api(year, since_date=None):
             # gid format mirrors Retrosheet so dedup-by-gid works if Retrosheet ever
             # publishes the same game later.
             gid = f"{home_code}{date_str}{retro_dh}"
+            api_to_retro_gametype = {
+                "R": "regular",
+                "F": "wildcard",
+                "D": "divisionseries",
+                "L": "lcs",
+                "W": "worldseries",
+            }
             rows.append({
                 "gid": gid,
                 "date": int(date_str),
@@ -266,6 +274,7 @@ def fetch_mlb_stats_api(year, since_date=None):
                 "hruns": int(home_score),
                 "vruns": int(away_score),
                 "number": retro_dh,
+                "gametype": api_to_retro_gametype.get(g.get("gameType"), "regular"),
             })
 
     if unmapped:
@@ -305,6 +314,18 @@ def prepare_game_data(raw_df):
     df = df.dropna(subset=["hruns", "vruns", "date_game"])
     df["hruns"] = df["hruns"].astype(int)
     df["vruns"] = df["vruns"].astype(int)
+
+    # gametype: 'regular' / 'wildcard' / 'divisionseries' / 'lcs' / 'worldseries' / 'allstar'.
+    # Drop All-Star + any unrecognized values; keep only games that count.
+    if "gametype" not in df.columns:
+        df["gametype"] = "regular"
+    df["gametype"] = df["gametype"].fillna("regular").astype(str).str.lower()
+    keep_types = {"regular", "wildcard", "divisionseries", "lcs", "worldseries", "playoff"}
+    pre = len(df)
+    df = df[df["gametype"].isin(keep_types)].copy()
+    dropped = pre - len(df)
+    if dropped:
+        print(f"  Dropped {dropped} non-counting games (All-Star etc.).")
 
     # Map team codes -> canonical full names. Any unmapped code = surface a warning.
     df["home_team_name"]    = df["hometeam"].map(RETROSHEET_TEAM)
@@ -357,6 +378,7 @@ def prepare_game_data(raw_df):
         "grouped_date_id", "unique_game_id",
         "home_wl", "visitor_wl",
         "home_result", "visitor_result",
+        "gametype",
     ]
     df = df[out_cols]
     df.to_csv(ALL_GAMES_CSV, index=False)

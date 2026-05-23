@@ -234,10 +234,14 @@ ratings = pd.read_csv("griffey_ratings.csv.gz")
 ratings["ranking_date"] = pd.to_datetime(ratings["ranking_date"])
 ratings["season"] = ratings["season"].astype(int)
 
-games = pd.read_csv("all_mlb_games.csv")
+games = pd.read_csv("all_mlb_games.csv", low_memory=False)
 games["date_game"] = pd.to_datetime(games["date_game"])
 games["season"] = games["season"].astype(int)
 games = games[games["season"] >= 1961].copy()
+if "gametype" not in games.columns:
+    games["gametype"] = "regular"
+games["gametype"] = games["gametype"].fillna("regular").astype(str).str.lower()
+games["is_playoff_game_flag"] = games["gametype"] != "regular"
 
 print(f"  Ratings: {len(ratings):,} rows, {ratings['season'].min()}-{ratings['season'].max()}")
 print(f"  Games:   {len(games):,} rows, {games['season'].min()}-{games['season'].max()}")
@@ -278,8 +282,17 @@ def _rs_end_date(season_games_df, threshold):
 
 
 print("\nComputing per-season RS end dates...")
+# Definitive RS end = the latest date of any 'regular' game in the season.
+# Falls back to the mode-with-window heuristic for any season missing gametype
+# attribution (shouldn't happen post-2026-05-23 but keeps the path robust for
+# historical CSVs).
 rs_end_by_season = {}
+rs_games = games[~games["is_playoff_game_flag"]]
+for s, sub in rs_games.groupby("season"):
+    rs_end_by_season[int(s)] = sub["date_game"].max()
 for s, sub in games.groupby("season"):
+    if int(s) in rs_end_by_season:
+        continue
     th = REGULAR_SEASON_GAMES.get(int(s), 162)
     d = _rs_end_date(sub, th)
     if d is not None:
@@ -336,15 +349,14 @@ print("\nComputing per-team season records...")
 def team_game_view(games_df):
     """One row per team per game, with W/L flag + result string from that team's
     perspective. Used both for end-of-season totals and per-snapshot rolling records."""
-    home = games_df[["season", "date_game", "home_team_name", "home_win", "is_tie", "home_result"]].rename(
+    home = games_df[["season", "date_game", "home_team_name", "home_win", "is_tie", "home_result", "is_playoff_game_flag"]].rename(
         columns={"home_team_name": "team", "home_win": "won", "home_result": "result"})
-    away = games_df[["season", "date_game", "visitor_team_name", "visitor_win", "is_tie", "visitor_result"]].rename(
+    away = games_df[["season", "date_game", "visitor_team_name", "visitor_win", "is_tie", "visitor_result", "is_playoff_game_flag"]].rename(
         columns={"visitor_team_name": "team", "visitor_win": "won", "visitor_result": "result"})
     return pd.concat([home, away], ignore_index=True)
 
 team_games = team_game_view(games)
-team_games["is_playoff_game"] = team_games.apply(
-    lambda r: r["date_game"] > rs_end_by_season.get(int(r["season"]), pd.Timestamp("2030-01-01")), axis=1)
+team_games["is_playoff_game"] = team_games["is_playoff_game_flag"]
 
 records = (
     team_games.groupby(["season", "team", "is_playoff_game"])
