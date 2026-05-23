@@ -618,10 +618,10 @@ function renderLastMatch(raw, season, isStale) {
   const cls = isStale
     ? (raw[0] === 'W' ? 'result-W-stale' : raw[0] === 'L' ? 'result-L-stale' : '')
     : (raw[0] === 'W' ? 'result-W' : raw[0] === 'L' ? 'result-L' : '');
-  // "W vs. Boston Red Sox 5-3" or "L @ Boston Red Sox 3-5"
-  const m = raw.match(/^([WL])\s+(vs\.?|@)\s+(.+?)\s+(\d+\s*-\s*\d+)$/);
+  // Canonical format: "W 5-3 vs. Boston Red Sox" or "L 3-5 @ Boston Red Sox"
+  const m = raw.match(/^([WLT])\s+(\d+\s*-\s*\d+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+)$/);
   if (!m) return `<span class="${cls}">${raw}</span>`;
-  const [, letter, venue, opponent, score] = m;
+  const [, letter, score, venue, opponent] = m;
   const slug = nameToSlug[opponent.trim()];
   const oppHtml = slug
     ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
