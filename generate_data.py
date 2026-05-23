@@ -852,7 +852,7 @@ with open("docs/data/goat_ps.json", "w") as f:
 # =========================================================
 # OUTPUT: seasons_index.json
 # =========================================================
-seasons_index = sorted({int(s) for s in ratings["season"].unique()})
+seasons_index = sorted({int(s) for s in ratings["season"].unique()}, reverse=True)
 with open("docs/data/seasons_index.json", "w") as f:
     json.dump({
         "seasons":     seasons_index,
