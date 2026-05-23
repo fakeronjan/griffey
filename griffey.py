@@ -143,8 +143,8 @@ TEAM_LEAGUE = {
     "Pittsburgh Pirates": "NL", "San Diego Padres": "NL", "San Francisco Giants": "NL",
     "St. Louis Cardinals": "NL", "Washington Nationals": "NL",
     # Switchers - Brewers AL 1969-1997 then NL; Astros NL 1962-2012 then AL
-    # Era-aware league should live in generate_data.py via per-(team,season) lookup;
-    # this dict gives "current" league for the standings filter.
+    # This dict gives the CURRENT-era league. Era-aware lookups (used by the
+    # WLS solver's cross-league mean anchor) consult TEAM_LEAGUE_HISTORY below.
     "Milwaukee Brewers": "NL",
     "Houston Astros": "AL",
     # Historical franchises in our window (kept separate from successors per relocation policy)
@@ -153,6 +153,24 @@ TEAM_LEAGUE = {
     "Seattle Pilots": "AL",
     "Montreal Expos": "NL",
 }
+
+# Era-aware league overrides for switchers. Lookup by season. Lookups for any team
+# not in this dict fall back to TEAM_LEAGUE (the modern-era default).
+TEAM_LEAGUE_HISTORY = {
+    "Milwaukee Brewers": [(1970, 1997, "AL"), (1998, 9999, "NL")],
+    "Houston Astros":    [(1962, 2012, "NL"), (2013, 9999, "AL")],
+}
+
+
+def _team_league(team, season):
+    """Era-aware league lookup. Returns 'AL' or 'NL' (or 'Other' if unknown)."""
+    history = TEAM_LEAGUE_HISTORY.get(team)
+    if history:
+        s = int(season)
+        for start, end, lg in history:
+            if start <= s <= end:
+                return lg
+    return TEAM_LEAGUE.get(team, "Other")
 
 
 # =========================================================
@@ -433,16 +451,17 @@ def _connected_components(teams, edges):
     return out
 
 
-def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
+def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap, season):
     """
     Solve for team Massey ratings on a single rolling window.
 
-    Builds X (n_games × n_teams) with +1 for home, -1 for visitor, y from the transformed
-    HCA-adjusted home margin, and W from the recency weights. Solves min sum_i w_i * (X_i r - y_i)^2
-    with a zero-sum constraint enforced as a high-weight row PER CONNECTED COMPONENT (not just
-    a single global constraint). This handles MLB's 2020 COVID regional schedule cleanly -
-    when the East/Central/West components don't connect via cross-region games, each component
-    gets its own zero-sum anchor instead of all three sloshing around one global mean.
+    Zero-sum constraint is applied PER (connected component, league) — so AL and NL
+    are independently centered at zero within each component. This prevents the small
+    sample of inter-league games (6 WS games pre-1997, ~250 interleague + WS post-1997)
+    from sloshing the cross-league baseline around. WS / interleague games still
+    influence INDIVIDUAL ratings via the regression, just not league means.
+
+    Components also handle MLB's 2020 COVID regional schedule cleanly.
 
     WLS via row-scaling: multiplying both X and y by sqrt(w_i) turns the weighted problem
     into an ordinary lstsq.
@@ -458,14 +477,15 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
     home_names = window_df["home_team_name"].to_numpy()
     visitor_names = window_df["visitor_team_name"].to_numpy()
 
-    # Connected components - one zero-sum constraint per component
+    # Connected components × era-aware league → one zero-sum anchor each
     comp_map = _connected_components(teams, zip(home_names, visitor_names))
-    n_components = max(comp_map.values()) + 1 if comp_map else 1
-    teams_by_comp = [[] for _ in range(n_components)]
-    for t, c in comp_map.items():
-        teams_by_comp[c].append(t)
+    league_lookup = {t: _team_league(t, season) for t in teams}
+    anchor_groups = {}  # (comp_id, league) -> [teams]
+    for t in teams:
+        anchor_groups.setdefault((comp_map[t], league_lookup[t]), []).append(t)
+    anchor_keys = sorted(anchor_groups.keys())
 
-    n_rows = n_games + n_components
+    n_rows = n_games + len(anchor_keys)
     X = np.zeros((n_rows, n_teams))
     y = np.zeros(n_rows)
     w = np.zeros(n_rows)
@@ -483,10 +503,10 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
     else:
         raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
 
-    # One zero-sum row per connected component.
-    for c, comp_teams in enumerate(teams_by_comp):
-        row = n_games + c
-        for t in comp_teams:
+    # One zero-sum row per (component, league) — AL and NL each centered at zero.
+    for k, key in enumerate(anchor_keys):
+        row = n_games + k
+        for t in anchor_groups[key]:
             X[row, team_idx[t]] = 1.0
         y[row] = 0.0
         w[row] = 1.0e8
@@ -589,6 +609,7 @@ def compute_ratings(master_df, existing_ratings_df):
                 weighting_mode=WEIGHTING_MODE,
                 margin_transform=MARGIN_TRANSFORM,
                 margin_cap=MARGIN_CAP,
+                season=season,
             )
         except Exception as e:
             print(f"  [skip] grouped_date_id {i} ({current_date.date()}): {e}")
