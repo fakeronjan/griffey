@@ -647,7 +647,7 @@ function renderLastMatch(raw, season, isStale) {
   const oppHtml = slug
     ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
     : opponent;
-  return `<span class="${cls}">${letter} ${venue} ${oppHtml} ${score}</span>`;
+  return `<span class="${cls}">${letter} ${score} ${venue} ${oppHtml}</span>`;
 }
 
 function renderStandings() {
