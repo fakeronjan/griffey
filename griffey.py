@@ -15,6 +15,7 @@ Covers every MLB game from 1898 to present, updated annually.
 """
 
 import io
+import json
 import os
 import zipfile
 from datetime import datetime
@@ -66,8 +67,14 @@ REGULAR_SEASON_GAMES = {
     2020: 60,
 }
 
-# Retrosheet download URL — single zip with one CSV inside.
+# Retrosheet download URL (single zip with one CSV inside). Annually updated; we use
+# it as the historical backbone (1961 through end of last completed season).
 RETROSHEET_URL = "https://retrosheet.org/downloads/gameinfo.zip"
+
+# MLB Stats API endpoint. Used as a "tail fetcher" for current-year in-season games
+# that Retrosheet hasn't published yet. Free, no auth, official MLB data.
+STATSAPI_URL = "https://statsapi.mlb.com/api/v1/schedule"
+
 LOADED_GAMES_CSV = "loaded_mlb_games.csv"
 ALL_GAMES_CSV    = "all_mlb_games.csv"
 
@@ -160,6 +167,127 @@ def fetch_retrosheet():
             df = pd.read_csv(f, low_memory=False)
     print(f"  Fetched {len(df):,} rows.")
     return df
+
+
+def _name_to_retrosheet_code():
+    """Build a canonical-name -> CURRENT Retrosheet code map.
+    RETROSHEET_TEAM maps multiple historical codes (CAL/ANA/LAA) to the same canonical
+    name, so we need to pick ONE code per name for the reverse lookup. MLB Stats API
+    returns current team names, so use the modern Retrosheet code for each."""
+    current_code = {
+        "Los Angeles Angels":     "LAA",
+        "Baltimore Orioles":      "BAL",
+        "Boston Red Sox":         "BOS",
+        "Chicago White Sox":      "CHA",
+        "Cleveland Guardians":    "CLE",
+        "Detroit Tigers":         "DET",
+        "Houston Astros":         "HOU",
+        "Kansas City Royals":     "KCA",
+        "Minnesota Twins":        "MIN",
+        "New York Yankees":       "NYA",
+        "Oakland Athletics":      "OAK",
+        # Athletics use just "Athletics" since their 2025 Sacramento relocation (pending
+        # Vegas in 2028). Same franchise as the Oakland Athletics under fleet policy
+        # until they get a permanent new home.
+        "Athletics":              "OAK",
+        "Seattle Mariners":       "SEA",
+        "Tampa Bay Rays":         "TBA",
+        "Texas Rangers":          "TEX",
+        "Toronto Blue Jays":      "TOR",
+        "Arizona Diamondbacks":   "ARI",
+        "Atlanta Braves":         "ATL",
+        "Chicago Cubs":           "CHN",
+        "Cincinnati Reds":        "CIN",
+        "Colorado Rockies":       "COL",
+        "Los Angeles Dodgers":    "LAN",
+        "Miami Marlins":          "MIA",
+        "Milwaukee Brewers":      "MIL",
+        "New York Mets":          "NYN",
+        "Philadelphia Phillies":  "PHI",
+        "Pittsburgh Pirates":     "PIT",
+        "San Diego Padres":       "SDN",
+        "San Francisco Giants":   "SFN",
+        "St. Louis Cardinals":    "SLN",
+        "Washington Nationals":   "WAS",
+    }
+    return current_code
+
+
+def fetch_mlb_stats_api(year, since_date=None):
+    """Pull current-year games from MLB Stats API. Returns a DataFrame in the same shape
+    as Retrosheet's gameinfo.csv so it can merge cleanly. Filters to Final games only.
+    All gameTypes included (R = regular season, F/D/L/W = playoff rounds).
+
+    If `since_date` is given (str 'YYYY-MM-DD'), pulls from that date onward; otherwise
+    pulls the full year from March 1.
+    """
+    start = since_date or f"{year}-03-01"
+    end   = f"{year}-12-31"
+    url = f"{STATSAPI_URL}?sportId=1&startDate={start}&endDate={end}"
+    print(f"Fetching MLB Stats API current-year games from {start} to {end}...")
+    with urlopen(url) as resp:
+        data = json.load(resp)
+
+    name_to_code = _name_to_retrosheet_code()
+
+    rows = []
+    unmapped = set()
+    for date_obj in data.get("dates", []):
+        for g in date_obj.get("games", []):
+            if g.get("status", {}).get("detailedState") != "Final":
+                continue
+            if g.get("gameType") not in {"R", "F", "D", "L", "W"}:
+                continue  # exclude spring training, exhibitions, All-Star, etc.
+            home_name  = g["teams"]["home"]["team"]["name"]
+            away_name  = g["teams"]["away"]["team"]["name"]
+            home_score = g["teams"]["home"].get("score")
+            away_score = g["teams"]["away"].get("score")
+            if home_score is None or away_score is None:
+                continue
+            home_code = name_to_code.get(home_name)
+            away_code = name_to_code.get(away_name)
+            if not home_code or not away_code:
+                unmapped.add(home_name if not home_code else away_name)
+                continue
+            # Date format: YYYYMMDD (matches Retrosheet's `date` column)
+            date_str = g["officialDate"].replace("-", "")
+            # Doubleheader: Retrosheet uses 0 for single, 1/2 for doubleheader games.
+            # MLB Stats API uses 1 by default and 2 for second game.
+            game_no  = int(g.get("gameNumber", 1))
+            retro_dh = 0 if game_no == 1 and not g.get("doubleHeader", "N") in ("Y", "S") else game_no
+            # gid format mirrors Retrosheet so dedup-by-gid works if Retrosheet ever
+            # publishes the same game later.
+            gid = f"{home_code}{date_str}{retro_dh}"
+            rows.append({
+                "gid": gid,
+                "date": int(date_str),
+                "hometeam": home_code,
+                "visteam": away_code,
+                "hruns": int(home_score),
+                "vruns": int(away_score),
+                "number": retro_dh,
+            })
+
+    if unmapped:
+        print(f"  WARN: unmapped team names from MLB Stats API: {sorted(unmapped)}")
+    df = pd.DataFrame(rows)
+    print(f"  Fetched {len(df)} Final {year} games.")
+    return df
+
+
+def merge_game_sources(retrosheet_df, current_df):
+    """Concat Retrosheet historical + MLB Stats API current-year. Dedupes by gid so
+    repeated games are kept once. Retrosheet wins for the overlap (richer metadata)."""
+    if current_df is None or current_df.empty:
+        return retrosheet_df
+    # Drop current-year gids from Retrosheet (let MLB Stats API supply them) so we don't
+    # carry stale partial-season data if Retrosheet has a few early games but not the rest.
+    current_year = pd.to_datetime(current_df["date"].astype(str), format="%Y%m%d").dt.year.max()
+    retro_year = pd.to_datetime(retrosheet_df["date"].astype(str), format="%Y%m%d", errors="coerce").dt.year
+    retro_clean = retrosheet_df[retro_year != current_year].copy()
+    combined = pd.concat([retro_clean, current_df], ignore_index=True, sort=False)
+    combined = combined.drop_duplicates(subset=["gid"], keep="first")
+    return combined
 
 
 def prepare_game_data(raw_df):
@@ -466,7 +594,7 @@ def compute_ratings(master_df, existing_ratings_df):
 # =========================================================
 
 if __name__ == "__main__":
-    # Load raw games (cached locally to avoid hammering Retrosheet every run)
+    # Load Retrosheet historical data (cached locally to avoid hammering each run)
     if os.path.exists(LOADED_GAMES_CSV):
         raw = pd.read_csv(LOADED_GAMES_CSV, low_memory=False)
         print(f"Loaded {len(raw):,} games from local cache.")
@@ -474,6 +602,15 @@ if __name__ == "__main__":
         raw = fetch_retrosheet()
         raw.to_csv(LOADED_GAMES_CSV, index=False)
         print(f"Cached raw games to {LOADED_GAMES_CSV}")
+
+    # Add current-year data from MLB Stats API (Retrosheet only updates annually).
+    current_year = datetime.now().year
+    try:
+        current = fetch_mlb_stats_api(current_year)
+        raw = merge_game_sources(raw, current)
+        print(f"  Combined dataset: {len(raw):,} games.")
+    except Exception as e:
+        print(f"  WARN: MLB Stats API fetch failed ({e}). Continuing with Retrosheet only.")
 
     master = prepare_game_data(raw)
     print(f"\nMargin sanity: mean home margin = {master['home_margin'].mean():+.3f}, home win rate = {master['home_win'].mean()*100:.1f}%")
