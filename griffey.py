@@ -33,14 +33,14 @@ MIN_SEASON = 1961             # Expansion era anchor (162-game season + AL/NL po
 # Season-aware rolling window: window (game-days) = WINDOW_MULTIPLIER * games-per-team-per-season.
 # At 0.75, a 162-game MLB season gets a 121-day window (~67% of season). Shortened seasons
 # (lockouts, COVID) get proportionally smaller windows automatically.
-WINDOW_MULTIPLIER = 0.75
+WINDOW_MULTIPLIER = 1.25
 
 HOME_COURT_ADJUSTMENT = 0.1   # raw-run home advantage (modern-era empirical: ~0.09-0.13 runs)
 
 # Margin transform: cap at 10 runs. Captures ~98% of MLB games uncapped - only the most
 # extreme blowouts (often garbage-time bullpen scenarios) get trimmed.
 MARGIN_TRANSFORM = "cap"
-MARGIN_CAP = 10
+MARGIN_CAP = 8
 
 # WLS observation weights: recency × tier × match-type. MLB has no tier weights (all games
 # are full competitive games; no friendlies). Just recency decay across the window.

@@ -804,6 +804,11 @@ ws_seasons = set(ws_results.keys())
 def build_goat(flag_col, require_ws=False):
     rows = ratings[(ratings[flag_col] == 1) & (ratings["season"].isin(ws_seasons))].copy()
 
+    # Filter ghost snapshots (team in window but didn't actually play that season).
+    rows = rows[rows.apply(
+        lambda r: r["name"] in teams_played_by_season.get(int(r["season"]), set()), axis=1
+    )]
+
     # For GOAT-PS, require the team to have actually played in the World Series.
     # Matches the fleet convention (DUNCAN top 10 = NBA Finals teams, DILLON = SB teams,
     # LOBO = WNBA Finals teams). Also filters out the post-merge PS-end inflation
