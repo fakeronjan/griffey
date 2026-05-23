@@ -712,9 +712,11 @@ for s in sorted(ws_results.keys(), reverse=True):
     ru_ps = ratings[(ratings["season"]==s) & (ratings["name"]==info["runner_up"]) & (ratings["is_ps_end"]==1)]
     rec_ch = rec_lookup.get((s, info["champion"]))
     rec_ru = rec_lookup.get((s, info["runner_up"]))
+    pre_rated = ch_rs.empty and ch_ps.empty  # season was consumed by warm-up window
     champs_list.append({
         "season":    s,
         "series":    info["series"],
+        "pre_rated": pre_rated,
         "champion": {
             "team":         info["champion"],
             "display_name": display_name(info["champion"], s),
@@ -856,8 +858,8 @@ seasons_index = sorted({int(s) for s in ratings["season"].unique()}, reverse=Tru
 with open("docs/data/seasons_index.json", "w") as f:
     json.dump({
         "seasons":     seasons_index,
-        "first_date":  str(ratings["ranking_date"].min().date()),
-        "last_date":   str(ratings["ranking_date"].max().date()),
+        "first_date":  str(games["date_game"].min().date()),
+        "last_date":   str(games["date_game"].max().date()),
     }, f, separators=(",", ":"))
 
 
