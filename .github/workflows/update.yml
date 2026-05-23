@@ -1,0 +1,45 @@
+name: Update GRIFFEY Ratings
+
+on:
+  schedule:
+    - cron: '53 16 * * *'   # 16:53 UTC daily — after COBI (16:33); MLB Stats API + Retrosheet (separate sources from sports-reference)
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write           # needed for git push
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install cython numpy
+          pip install --no-build-isolation -r requirements.txt
+
+      - name: Run ratings engine
+        run: python griffey.py
+
+      - name: Generate web data
+        run: python generate_data.py
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name  "GRIFFEY Bot"
+          git config user.email "griffey-bot@users.noreply.github.com"
+          git add loaded_mlb_games.csv all_mlb_games.csv griffey_ratings.csv.gz docs/data/
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update ratings $(date -u '+%Y-%m-%d')"
+            git push
+          fi
