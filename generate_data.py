@@ -821,6 +821,8 @@ def build_goat(flag_col, require_ws=False):
             "team":         r["name"],
             "display_name": display_name(r["name"], s),
             "league":       league(r["name"], s),
+            "division":     division(r["name"], s),
+            "division_winner": 1 if (s, r["name"]) in division_winners else 0,
             "season":       s,
             "rating":       round(float(r["rating"]), 3),
             "regular_record": rec["rs_record"] if rec is not None else "",
