@@ -95,8 +95,8 @@ RETROSHEET_TEAM = {
     "LAA": "Los Angeles Angels",
     "MIN": "Minnesota Twins",
     "NYA": "New York Yankees",
-    "OAK": "Oakland Athletics",      # Will eventually move to Vegas
-    "ATH": "Oakland Athletics",      # Retrosheet code for Sacramento Athletics 2025+ (same franchise)
+    "OAK": "Oakland Athletics",      # 1968-2024 (separate franchise; relocated)
+    "ATH": "Las Vegas Athletics",    # 2025+ (in Sacramento transitionally pending Vegas park)
     "SEA": "Seattle Mariners",
     "TBA": "Tampa Bay Rays",         # Devil Rays 1998-2007 -> Rays 2008+ (same-market)
     "TEX": "Texas Rangers",          # Senators relocated, kept separate
@@ -133,7 +133,8 @@ TEAM_LEAGUE = {
     "Los Angeles Angels": "AL", "Baltimore Orioles": "AL", "Boston Red Sox": "AL",
     "Chicago White Sox": "AL", "Cleveland Guardians": "AL", "Detroit Tigers": "AL",
     "Kansas City Royals": "AL", "Minnesota Twins": "AL", "New York Yankees": "AL",
-    "Oakland Athletics": "AL", "Seattle Mariners": "AL", "Tampa Bay Rays": "AL",
+    "Oakland Athletics": "AL", "Las Vegas Athletics": "AL",
+    "Seattle Mariners": "AL", "Tampa Bay Rays": "AL",
     "Texas Rangers": "AL", "Toronto Blue Jays": "AL",
     # NL teams (always NL)
     "Arizona Diamondbacks": "NL", "Atlanta Braves": "NL", "Chicago Cubs": "NL",
@@ -187,10 +188,11 @@ def _name_to_retrosheet_code():
         "Minnesota Twins":        "MIN",
         "New York Yankees":       "NYA",
         "Oakland Athletics":      "OAK",
-        # Athletics use just "Athletics" since their 2025 Sacramento relocation (pending
-        # Vegas in 2028). Same franchise as the Oakland Athletics under fleet policy
-        # until they get a permanent new home.
-        "Athletics":              "OAK",
+        # Athletics 2025+ are a separate franchise (left Oakland; Vegas-bound; Sacramento
+        # is a transitional venue). MLB API name 'Athletics' → 'ATH' Retrosheet code so
+        # gids match Retrosheet's own coding for these games.
+        "Athletics":              "ATH",
+        "Las Vegas Athletics":    "ATH",
         "Seattle Mariners":       "SEA",
         "Tampa Bay Rays":         "TBA",
         "Texas Rangers":          "TEX",

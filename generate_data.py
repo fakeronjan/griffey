@@ -53,6 +53,7 @@ TEAM_LEAGUE = {
     "Minnesota Twins":        "AL",
     "New York Yankees":       "AL",
     "Oakland Athletics":      "AL",
+    "Las Vegas Athletics":    "AL",
     "Seattle Mariners":       "AL",
     "Tampa Bay Rays":         "AL",
     "Texas Rangers":          "AL",
@@ -108,7 +109,8 @@ TEAM_DIVISION_HISTORY = {
     # AL West
     "Houston Astros":        [(1969, 1993, "NL West"), (1994, 2012, "NL Central"), (2013, 9999, "AL West")],
     "Los Angeles Angels":    [(1969, 1993, "AL West"), (1994, 9999, "AL West")],
-    "Oakland Athletics":     [(1969, 1993, "AL West"), (1994, 9999, "AL West")],
+    "Oakland Athletics":     [(1969, 1993, "AL West"), (1994, 2024, "AL West")],
+    "Las Vegas Athletics":   [(2025, 9999, "AL West")],
     "Seattle Mariners":      [(1977, 1993, "AL West"), (1994, 9999, "AL West")],
     "Texas Rangers":         [(1972, 1993, "AL West"), (1994, 9999, "AL West")],
     # NL East
@@ -144,6 +146,7 @@ GRIFFEY_TEAM_DISPLAY_HISTORY = {
     "Tampa Bay Rays":       [(1998, 2007, "Tampa Bay Devil Rays"), (2008, 9999, "Tampa Bay Rays")],
     "Houston Astros":       [(1962, 1964, "Houston Colt .45s"), (1965, 9999, "Houston Astros")],
     "Miami Marlins":        [(1993, 2011, "Florida Marlins"), (2012, 9999, "Miami Marlins")],
+    "Las Vegas Athletics":  [(2025, 2027, "Athletics"), (2028, 9999, "Las Vegas Athletics")],
 }
 
 
@@ -553,6 +556,14 @@ with open("docs/data/current_standings.json", "w") as f:
 # =========================================================
 print("Writing per-season JSON files...")
 
+# Teams that actually played at least one game in each season. Filters out
+# ghost snapshots — e.g., "Oakland Athletics" still has a rolling-window
+# rating in early 2025 from their 2024 games, but they didn't exist as a
+# franchise in 2025.
+teams_played_by_season = {}
+for s_, sub in games.groupby("season"):
+    teams_played_by_season[int(s_)] = set(sub["home_team_name"]) | set(sub["visitor_team_name"])
+
 for s in sorted(ratings["season"].unique()):
     s = int(s)
     sdf = ratings[ratings["season"] == s].copy()
@@ -560,7 +571,9 @@ for s in sorted(ratings["season"].unique()):
     ws_champ = ws_info.get("champion")
     ws_ru    = ws_info.get("runner_up")
     snapshots = []
+    played_this_season = teams_played_by_season.get(s, set())
     for rid, rdf in sdf.groupby("ranking_id"):
+        rdf = rdf[rdf["name"].isin(played_this_season)].copy() if played_this_season else rdf
         rdf = rdf.sort_values("rank")
         snap_date_ts = rdf["ranking_date"].iloc[0]
         snap_date = str(snap_date_ts.date())
@@ -617,6 +630,8 @@ for team in sorted(ratings["name"].unique()):
     seasons_dict = {}
     for s, sub in tdf.groupby("season"):
         s = int(s)
+        if team not in teams_played_by_season.get(s, set()):
+            continue  # ghost season (rolling-window only, team didn't play)
         ws_info = ws_results.get(s, {})
         finals_status = 2 if ws_info.get("champion") == team else (1 if ws_info.get("runner_up") == team else 0)
         # Per-snapshot entries (matches DUNCAN/DILLON Team Summary structure exactly:
