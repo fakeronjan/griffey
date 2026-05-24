@@ -523,9 +523,15 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap, 
 
 
 def _window_for_season(season):
-    """Season-aware window size: WINDOW_MULTIPLIER × regular-season games per team."""
-    reg_games = REGULAR_SEASON_GAMES.get(int(season), 162)
-    return int(round(reg_games * WINDOW_MULTIPLIER))
+    """Fixed rolling window across all seasons (162 * WINDOW_MULTIPLIER = 202).
+
+    Why fixed not variable: short seasons (1981 strike, 1994 strike, 1995
+    catch-up, 2020 COVID) used to get a proportionally shrunk window, which
+    inflated tiny-sample ratings for whoever ran hot in those years. A
+    constant 202-game-day window pulls extra lookback from the prior season
+    for short years and keeps full seasons unchanged.
+    """
+    return int(round(162 * WINDOW_MULTIPLIER))
 
 
 _MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
