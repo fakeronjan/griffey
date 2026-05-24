@@ -525,8 +525,63 @@ NO_TITLES_SEASONS = {1994}
 # on seasons whose regular season has actually wrapped (>=15 teams hit 162 OR
 # postseason games are logged) per the gate we added 2026-05-23.
 COMPLETED_SEASONS = set(rs_end_by_season.keys())
+
+
+def _resolve_division_tie(season, tied_teams, rs_games_for_season):
+    """MLB tiebreaker cascade: head-to-head, then intra-division pct, then
+    league-wide pct, then alphabetical fallback. Operates on regular-season
+    games only. Returns the winning team name."""
+    rs = rs_games_for_season
+    teams_set = set(tied_teams)
+    # 1. Head-to-head pct between the tied teams
+    h2h = rs[
+        rs["home_team_name"].isin(teams_set) & rs["visitor_team_name"].isin(teams_set)
+    ]
+    if not h2h.empty:
+        h2h_recs = {}
+        for t in tied_teams:
+            tg = h2h[(h2h["home_team_name"] == t) | (h2h["visitor_team_name"] == t)]
+            w = int(((tg["home_team_name"] == t) & (tg["home_win"] == 1)).sum()
+                  + ((tg["visitor_team_name"] == t) & (tg["visitor_win"] == 1)).sum())
+            g_count = len(tg)
+            h2h_recs[t] = (w / g_count) if g_count else 0.0
+        best = max(h2h_recs.values())
+        winners = [t for t in tied_teams if h2h_recs[t] == best]
+        if len(winners) == 1:
+            return winners[0]
+        tied_teams = winners
+    # 2. Intra-division pct
+    div_name = division(tied_teams[0], season)
+    div_teams = {
+        t for t in rs["home_team_name"].unique()
+        if division(t, season) == div_name
+    } | {
+        t for t in rs["visitor_team_name"].unique()
+        if division(t, season) == div_name
+    }
+    intra = rs[
+        rs["home_team_name"].isin(div_teams) & rs["visitor_team_name"].isin(div_teams)
+    ]
+    if not intra.empty:
+        intra_recs = {}
+        for t in tied_teams:
+            tg = intra[(intra["home_team_name"] == t) | (intra["visitor_team_name"] == t)]
+            w = int(((tg["home_team_name"] == t) & (tg["home_win"] == 1)).sum()
+                  + ((tg["visitor_team_name"] == t) & (tg["visitor_win"] == 1)).sum())
+            g_count = len(tg)
+            intra_recs[t] = (w / g_count) if g_count else 0.0
+        best = max(intra_recs.values())
+        winners = [t for t in tied_teams if intra_recs[t] == best]
+        if len(winners) == 1:
+            return winners[0]
+        tied_teams = winners
+    # 3. League-wide pct already used to flag the tie; if still tied, alphabetize
+    return sorted(tied_teams)[0]
+
+
 division_winners = set()  # set of (season, team) tuples
 rs_only = team_games[~team_games["is_playoff_game"]].copy()
+rs_games_only = games[~games["is_playoff_game_flag"]].copy()
 for s, sub in rs_only.groupby("season"):
     s = int(s)
     if s < 1969 or s in NO_TITLES_SEASONS or s not in COMPLETED_SEASONS:
@@ -538,12 +593,13 @@ for s, sub in rs_only.groupby("season"):
     by_team = by_team[~by_team["div"].isin({"Other", "(pre-1969 AL)", "(pre-1969 NL)"})]
     if by_team.empty:
         continue
-    leaders = (
-        by_team.sort_values("pct", ascending=False)
-        .drop_duplicates("div", keep="first")
-    )
-    for _, r in leaders.iterrows():
-        division_winners.add((s, r["team"]))
+    rs_for_season = rs_games_only[rs_games_only["season"] == s]
+    for div_name, div_sub in by_team.groupby("div"):
+        top_pct = div_sub["pct"].max()
+        tied_at_top = div_sub[div_sub["pct"] == top_pct]["team"].tolist()
+        winner = (tied_at_top[0] if len(tied_at_top) == 1
+                  else _resolve_division_tie(s, tied_at_top, rs_for_season))
+        division_winners.add((s, winner))
 print(f"  {len(division_winners)} division titles flagged.")
 print(f"  Last 5: {[(s, ws_results[s]['champion'], ws_results[s]['series']) for s in sorted(ws_results)[-5:]]}")
 
