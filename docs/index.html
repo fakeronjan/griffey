@@ -200,6 +200,7 @@
   .finish-runner   { background: #ddd; color: #444; }
   .conf-pill       { background: #f4f4f4; color: #555; border: 1px solid #e8e8e8; }
   .covid-tag       { background: #fde0e0; color: #c62828; border: 1px solid #f5b3b3; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; letter-spacing: 0.5px; }
+  .strike-tag      { background: #fde0e0; color: #c62828; border: 1px solid #f5b3b3; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; letter-spacing: 0.5px; }
 
   .last-match-cell {
     font-size: 12px;
@@ -328,6 +329,9 @@
   <p class="data-note" id="covid-note" style="display:none;color:#c62828">
     Note: 2020 was a COVID-shortened 60-game regular season with regional-only play and an expanded 16-team bubble postseason. Small sample size and limited cross-region games make 2020 ratings less reliable than other seasons.
   </p>
+  <p class="data-note" id="strike-note" style="display:none;color:#c62828">
+    Note: a players' strike on August 12, 1994 cancelled the rest of the season and the entire postseason. No division titles, no pennants, and no World Series were awarded.
+  </p>
   <div id="standings-table-wrap"><p class="loading">Loading standings...</p></div>
 </div>
 
@@ -343,6 +347,9 @@
       <option value="eor">End of regular season</option>
     </select>
   </div>
+  <p class="data-note" id="ts-strike-note" style="display:none;color:#c62828">
+    Note: a players' strike on August 12, 1994 cancelled the rest of the season and the entire postseason. No division titles, no pennants, and no World Series were awarded.
+  </p>
   <div id="chart-wrap" style="display:none">
     <svg id="season-chart"></svg>
   </div>
@@ -615,6 +622,8 @@ async function loadSeason(season) {
       (parseInt(season) === 1962) ? 'block' : 'none';
     document.getElementById('covid-note').style.display =
       (parseInt(season) === 2020) ? 'block' : 'none';
+    document.getElementById('strike-note').style.display =
+      (parseInt(season) === 1994) ? 'block' : 'none';
   } catch(e) {
     document.getElementById('standings-table-wrap').innerHTML =
       `<p class="error">Could not load season data.</p>`;
@@ -785,6 +794,8 @@ function renderTeamTable() {
         }
       });
     });
+    document.getElementById('ts-strike-note').style.display =
+      (parseInt(seasonFilter) === 1994) ? 'block' : 'none';
   } else {
     // Cross-season summary view: all seasons, but filtered to one snapshot per season
     // (end of regular season OR end of postseason per the date-type pill).
@@ -796,6 +807,7 @@ function renderTeamTable() {
         if (g.season_flag === flag) rows.push({...g, season: s});
       });
     });
+    document.getElementById('ts-strike-note').style.display = 'none';
   }
 
   drawChart(rows, seasonFilter);
@@ -805,10 +817,13 @@ function renderTeamTable() {
   const canonical = data.team;
   const tableRows = [...rows].reverse().map(g => {
     const era = (g.display_name && g.display_name !== canonical) ? g.display_name : '';
+    const isStrike = parseInt(g.season) === 1994;
+    const strikeTag = isStrike ? ' <span class="strike-tag">STRIKE</span>' : '';
     const seasonCell = era
-      ? `${g.season}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
-      : g.season;
-    const dateLabel = g.season_flag === 1 ? 'End of regular season'
+      ? `${g.season}${strikeTag}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
+      : `${g.season}${strikeTag}`;
+    const dateLabel = isStrike ? 'Strike began Aug 12, 1994'
+                    : g.season_flag === 1 ? 'End of regular season'
                     : g.season_flag === 2 ? 'End of playoffs'
                     : '';
     const dateCell = dateLabel
@@ -946,6 +961,13 @@ function renderChampions() {
 
   let anyPreRated = false;
   const rows = entries.map(e => {
+    if (e.no_series) {
+      // 1994 strike — single-cell row across the table with a callout.
+      return `<tr style="background:#fdf3f3">
+        <td class="season-cell linked" data-season-link="${e.season}">${e.season}</td>
+        <td colspan="9" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series — players' strike cancelled the postseason</td>
+      </tr>`;
+    }
     const preRated = !!e.pre_rated;
     if (preRated) anyPreRated = true;
     const seasonSuffix = preRated ? ' <sup style="color:#888">†</sup>' : '';

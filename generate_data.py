@@ -518,11 +518,14 @@ print(f"  WS detected: {len(ws_results)} seasons.")
 # resolved here.
 
 print("\nComputing division winners...")
+# 1994: players' strike on Aug 12 cancelled the rest of the season and the
+# postseason. MLB officially recognized no division titles, no pennants, no WS.
+NO_TITLES_SEASONS = {1994}
 division_winners = set()  # set of (season, team) tuples
 rs_only = team_games[~team_games["is_playoff_game"]].copy()
 for s, sub in rs_only.groupby("season"):
     s = int(s)
-    if s < 1969:
+    if s < 1969 or s in NO_TITLES_SEASONS:
         continue
     by_team = sub.groupby("team").agg(W=("won", "sum"), G=("won", "size")).reset_index()
     by_team["L"]   = by_team["G"] - by_team["W"]
@@ -740,6 +743,22 @@ for s in sorted(ws_results.keys(), reverse=True):
             "ps_end_rank":    int(ru_ps["rank"].iloc[0]) if not ru_ps.empty else None,
         },
     })
+
+# Insert a synthetic 1994 entry — players' strike on Aug 12 cancelled the
+# postseason and no World Series was played. ws_results omits 1994 since the
+# WS-walker can't find a champion, so the season would otherwise vanish from
+# the Champions tab. Flag it as `no_series` so the UI can render a callout.
+if not any(e["season"] == 1994 for e in champs_list):
+    champs_list.append({
+        "season":    1994,
+        "series":    "",
+        "no_series": True,
+        "pre_rated": False,
+        "champion":  None,
+        "runner_up": None,
+    })
+    champs_list.sort(key=lambda e: -e["season"])
+
 # Pre-rated World Series titles (1903-1960).
 # Our rating data starts at season 1961 (expansion era anchor), so WS from 1903-1960
 # aren't otherwise captured. Counts only titles won under the franchise's CURRENT
@@ -782,6 +801,8 @@ PRE_1961_RUNNER_UPS = {
 _champ_count = dict(PRE_1961_CHAMPIONSHIPS)
 _ru_count    = dict(PRE_1961_RUNNER_UPS)
 for entry in reversed(champs_list):  # champs_list is newest-first; walk oldest-first
+    if entry.get("no_series"):
+        continue  # 1994 strike — no champion/runner-up to count
     ct = entry["champion"]["team"]
     rt = entry["runner_up"]["team"]
     _champ_count[ct] = _champ_count.get(ct, 0) + 1
