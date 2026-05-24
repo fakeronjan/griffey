@@ -771,15 +771,17 @@ function renderTeamTable() {
   const seasons = Object.keys(data.seasons).sort();
   let seasonFilter;
   if (tsView === 'single') {
-    // One-season view: filter to selected season AND only game-days for this team
-    // (a team plays ~162 of ~190 season-days; off-days would otherwise render as
-    // repeated stale rows). Game-day = snapshot date matches team's last_match_date.
+    // One-season view: filter to game-days for this team PLUS the EOR + EOS
+    // snapshots (so non-playoff teams still see their end-of-playoffs rating).
+    // Off-day rows beyond the team's last game render un-bolded via _isStale.
     seasonFilter = document.getElementById('season-select').value;
     seasons.forEach(s => {
       if (s !== seasonFilter) return;
       data.seasons[s].forEach(g => {
-        if (g.last_match_date && g.last_match_date === g.date) {
-          rows.push({...g, season: s});
+        const isGameDay = g.last_match_date && g.last_match_date === g.date;
+        const isFlag = g.season_flag === 1 || g.season_flag === 2;
+        if (isGameDay || isFlag) {
+          rows.push({...g, season: s, _isStale: isFlag && !isGameDay});
         }
       });
     });
@@ -806,10 +808,16 @@ function renderTeamTable() {
     const seasonCell = era
       ? `${g.season}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
       : g.season;
+    const dateLabel = g.season_flag === 1 ? 'End of regular season'
+                    : g.season_flag === 2 ? 'End of playoffs'
+                    : '';
+    const dateCell = dateLabel
+      ? `${g.date}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${dateLabel}</div>`
+      : g.date;
     return `<tr>
-    <td style="white-space:nowrap;color:#888;font-size:12px">${g.date}</td>
+    <td style="white-space:nowrap;color:#888;font-size:12px">${dateCell}</td>
     <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}</td>
-    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, false)}</td>
+    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, !!g._isStale)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
