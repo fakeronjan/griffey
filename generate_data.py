@@ -58,6 +58,7 @@ TEAM_LEAGUE = {
     "Tampa Bay Rays":         "AL",
     "Texas Rangers":          "AL",
     "Toronto Blue Jays":      "AL",
+    "Washington Senators":    "AL",   # Expansion 1961-1971 (defunct after 1971)
     # National League
     "Arizona Diamondbacks":   "NL",
     "Atlanta Braves":         "NL",
@@ -136,6 +137,7 @@ TEAM_DIVISION_HISTORY = {
     "Milwaukee Braves":      [(1961, 1965, "(pre-1969 NL)")],
     "Seattle Pilots":        [(1969, 1969, "AL West")],
     "Montreal Expos":        [(1969, 1993, "NL East"), (1994, 2004, "NL East")],
+    "Washington Senators":   [(1969, 1971, "AL East")],  # Expansion Senators 1961-1971; divisions only existed 1969-1971
 }
 
 

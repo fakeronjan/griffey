@@ -99,9 +99,9 @@ RETROSHEET_TEAM = {
     "ATH": "Las Vegas Athletics",    # 2025+ (in Sacramento transitionally pending Vegas park)
     "SEA": "Seattle Mariners",
     "TBA": "Tampa Bay Rays",         # Devil Rays 1998-2007 -> Rays 2008+ (same-market)
-    "TEX": "Texas Rangers",          # Senators relocated, kept separate
+    "TEX": "Texas Rangers",          # 1972+ (separate franchise from expansion Senators)
     "TOR": "Toronto Blue Jays",
-    "WS2": "Texas Rangers",          # Washington Senators (expansion) 1961-71 -> Rangers
+    "WS2": "Washington Senators",    # Expansion 1961-1971 (separate franchise per fleet 'move = lose history' policy)
     # National League
     "ARI": "Arizona Diamondbacks",
     "ATL": "Atlanta Braves",
@@ -136,6 +136,7 @@ TEAM_LEAGUE = {
     "Oakland Athletics": "AL", "Las Vegas Athletics": "AL",
     "Seattle Mariners": "AL", "Tampa Bay Rays": "AL",
     "Texas Rangers": "AL", "Toronto Blue Jays": "AL",
+    "Washington Senators": "AL",   # Expansion 1961-1971 (defunct after 1971; separate from Rangers)
     # NL teams (always NL)
     "Arizona Diamondbacks": "NL", "Atlanta Braves": "NL", "Chicago Cubs": "NL",
     "Cincinnati Reds": "NL", "Colorado Rockies": "NL", "Miami Marlins": "NL",
