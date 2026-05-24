@@ -506,7 +506,13 @@ for s, rs_end in rs_end_by_season.items():
     else:
         # Series incomplete (e.g., 1994 strike or in-progress current year)
         continue
-    ws_results[s] = {"champion": champ, "runner_up": ru, "series": series}
+    # Clinching game score (from champion's POV).
+    clincher = ws_games.sort_values("date_game").iloc[-1]
+    if clincher["home_team_name"] == champ:
+        final_score = f"{int(clincher['home_pts'])}-{int(clincher['visitor_pts'])}"
+    else:
+        final_score = f"{int(clincher['visitor_pts'])}-{int(clincher['home_pts'])}"
+    ws_results[s] = {"champion": champ, "runner_up": ru, "series": series, "final_score": final_score}
 
 print(f"  WS detected: {len(ws_results)} seasons.")
 
@@ -779,9 +785,10 @@ for s in sorted(ws_results.keys(), reverse=True):
     rec_ru = rec_lookup.get((s, info["runner_up"]))
     pre_rated = ch_rs.empty and ch_ps.empty  # season was consumed by warm-up window
     champs_list.append({
-        "season":    s,
-        "series":    info["series"],
-        "pre_rated": pre_rated,
+        "season":      s,
+        "series":      info["series"],
+        "final_score": info.get("final_score", ""),
+        "pre_rated":   pre_rated,
         "champion": {
             "team":         info["champion"],
             "display_name": display_name(info["champion"], s),
