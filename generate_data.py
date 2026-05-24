@@ -521,11 +521,15 @@ print("\nComputing division winners...")
 # 1994: players' strike on Aug 12 cancelled the rest of the season and the
 # postseason. MLB officially recognized no division titles, no pennants, no WS.
 NO_TITLES_SEASONS = {1994}
+# Only award division titles for COMPLETED seasons. rs_end_by_season is keyed
+# on seasons whose regular season has actually wrapped (>=15 teams hit 162 OR
+# postseason games are logged) per the gate we added 2026-05-23.
+COMPLETED_SEASONS = set(rs_end_by_season.keys())
 division_winners = set()  # set of (season, team) tuples
 rs_only = team_games[~team_games["is_playoff_game"]].copy()
 for s, sub in rs_only.groupby("season"):
     s = int(s)
-    if s < 1969 or s in NO_TITLES_SEASONS:
+    if s < 1969 or s in NO_TITLES_SEASONS or s not in COMPLETED_SEASONS:
         continue
     by_team = sub.groupby("team").agg(W=("won", "sum"), G=("won", "size")).reset_index()
     by_team["L"]   = by_team["G"] - by_team["W"]
