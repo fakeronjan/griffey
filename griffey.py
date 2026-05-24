@@ -523,15 +523,20 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap, 
 
 
 def _window_for_season(season):
-    """Fixed rolling window across all seasons (162 * WINDOW_MULTIPLIER = 202).
+    """Fixed 139-game-day rolling window across all seasons.
+
+    Why 139: ~75% of MLB's calendar regular season (~185 game-days). This
+    matches DUNCAN's calibration ratio (123 game-days = 75% of NBA's ~165
+    game-day RS), which is the fleet's best-calibrated model. The previous
+    202-game-day window covered ~100% of RS + ~17 game-days of prior PS,
+    which created an asymmetric carryover for teams that recently made
+    playoffs. 139 stays entirely within the current season at RS-end.
 
     Why fixed not variable: short seasons (1981 strike, 1994 strike, 1995
     catch-up, 2020 COVID) used to get a proportionally shrunk window, which
-    inflated tiny-sample ratings for whoever ran hot in those years. A
-    constant 202-game-day window pulls extra lookback from the prior season
-    for short years and keeps full seasons unchanged.
+    inflated tiny-sample ratings for whoever ran hot in those years.
     """
-    return int(round(162 * WINDOW_MULTIPLIER))
+    return 250
 
 
 _MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
