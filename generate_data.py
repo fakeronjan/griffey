@@ -387,7 +387,7 @@ rec_pivot = records.pivot_table(
     fill_value=0,
 ).reset_index()
 rec_pivot.columns = ["season", "team", "rs_L", "ps_L", "rs_W", "ps_W"]
-rec_pivot["rs_record"] = rec_pivot["rs_W"].astype(str) + "-" + rec_pivot["rs_L"].astype(str)
+rec_pivot["rs_record"] = rec_pivot["rs_W"].astype(int).astype(str) + "-" + rec_pivot["rs_L"].astype(int).astype(str)
 rec_pivot["ps_record"] = rec_pivot.apply(
     lambda r: f"{int(r['ps_W'])}-{int(r['ps_L'])}" if (r["ps_W"] + r["ps_L"]) > 0 else "",
     axis=1,
