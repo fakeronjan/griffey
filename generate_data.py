@@ -25,6 +25,7 @@ import json
 import os
 import re
 from bisect import bisect_right
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -947,9 +948,10 @@ with open("docs/data/goat_ps.json", "w") as f:
 seasons_index = sorted({int(s) for s in ratings["season"].unique()}, reverse=True)
 with open("docs/data/seasons_index.json", "w") as f:
     json.dump({
-        "seasons":     seasons_index,
-        "first_date":  str(games["date_game"].min().date()),
-        "last_date":   str(games["date_game"].max().date()),
+        "seasons":      seasons_index,
+        "first_date":   str(games["date_game"].min().date()),
+        "last_date":    str(games["date_game"].max().date()),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }, f, separators=(",", ":"))
 
 
