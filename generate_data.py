@@ -894,6 +894,33 @@ print("Writing GOAT lists (RS + PS)...")
 GOAT_TOP_N = 50
 ws_seasons = set(ws_results.keys())
 
+# Short / disrupted seasons — flagged on GOAT/Champions/Standings/TeamSummary
+# rows so the UI can tag them inline + footnote. Categories drive colour
+# (labor = amber, covid = yellow, cancelled = red).
+SHORT_SEASONS = {
+    1981: {
+        'tag': 'strike split',
+        'category': 'labor',
+        'note': "The 1981 regular season was interrupted by a players' strike from June 12 to August 9 (~50 days lost). The season was played in a split format with separate first-half and second-half division winners.",
+    },
+    1994: {
+        'tag': 'strike 113g',
+        'category': 'labor',
+        'note': "A players' strike on August 12, 1994 ended the season early at ~113 games per team and cancelled the entire postseason. No division titles, pennants, or World Series.",
+    },
+    1995: {
+        'tag': 'strike-delayed 144g',
+        'category': 'labor',
+        'note': "The 1995 season was shortened to 144 games; spring training and the start of the season were delayed by the residual 1994-95 strike.",
+    },
+    2020: {
+        'tag': 'COVID 60g',
+        'category': 'covid',
+        'note': "The 2020 season was shortened to 60 games with regional-only play; postseason expanded to 16 teams and played in a bubble.",
+    },
+}
+
+
 def build_goat(flag_col, require_ws=False):
     rows = ratings[(ratings[flag_col] == 1) & (ratings["season"].isin(ws_seasons))].copy()
 
@@ -927,6 +954,10 @@ def build_goat(flag_col, require_ws=False):
             "division":     division(r["name"], s),
             "division_winner": 1 if (s, r["name"]) in division_winners else 0,
             "season":       s,
+            "short_season":          s in SHORT_SEASONS,
+            "short_season_tag":      SHORT_SEASONS.get(s, {}).get("tag", "")      if s in SHORT_SEASONS else "",
+            "short_season_category": SHORT_SEASONS.get(s, {}).get("category", "") if s in SHORT_SEASONS else "",
+            "short_season_note":     SHORT_SEASONS.get(s, {}).get("note", "")     if s in SHORT_SEASONS else "",
             "rating":       round(float(r["rating"]), 3),
             "regular_record": rec["rs_record"] if rec is not None else "",
             "playoff_record": rec["ps_record"] if rec is not None else "",
@@ -952,6 +983,10 @@ with open("docs/data/seasons_index.json", "w") as f:
         "first_date":   str(games["date_game"].min().date()),
         "last_date":    str(games["date_game"].max().date()),
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "disrupted_seasons": {
+            str(year): {"tag": info["tag"], "category": info["category"], "note": info["note"]}
+            for year, info in SHORT_SEASONS.items()
+        },
     }, f, separators=(",", ":"))
 
 
