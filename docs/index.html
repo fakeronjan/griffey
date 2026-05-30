@@ -783,7 +783,6 @@ function renderStandings() {
   const prevDate = idx > 0 ? snaps[idx - 1].date : null;
 
   const season = currentSeasonData && currentSeasonData.season;
-  updateDisruptedNote('goat-disrupted-note', teams.map(t => t.season));
   const rows = teams.map(t => {
     const isStale = !!(prevDate && t.last_match_date && t.last_match_date <= prevDate);
     const slug = nameToSlug[t.team];
@@ -963,7 +962,7 @@ function renderTeamTable() {
       : g.date;
     return `<tr>
     <td style="white-space:nowrap;color:#888;font-size:12px">${dateCell}</td>
-    <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}</td>
+    <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}${tsView !== 'single' ? seasonTag(g.season) : ''}</td>
     <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, !!g._isStale)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record)}</td>
     <td class="rank-cell">${g.rank}</td>
@@ -1160,6 +1159,7 @@ function renderGoat() {
   const teams = goatConf === 'all'
     ? data
     : data.filter(t => t.league === goatConf);
+  updateDisruptedNote('goat-disrupted-note', teams.map(t => t.season));
 
   const rows = teams.map(t => {
     const label = t.display_name || t.team;
