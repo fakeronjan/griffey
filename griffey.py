@@ -1,10 +1,10 @@
 """
-GRIFFEY - MLB power ratings via WLS Massey solver.
+GRIFFEY - MLB power ratings via WLS fakeronjan WLS solver.
 
 Named after Ken Griffey Jr., Hall-of-Famer who played for Cincinnati 2000-2008.
 
 Model stack mirrors the WLS-template fleet (DUNCAN/LOBO/DILLON/SALAAM):
-  - Homebrew WLS Massey solver (no rankit dependency)
+  - Homebrew WLS fakeronjan WLS solver (no rankit dependency)
   - Margin cap to suppress blowouts
   - Per-game HCA on raw run margin
   - Season-aware rolling window (game-days)
@@ -408,7 +408,7 @@ def prepare_game_data(raw_df):
 
 
 # =========================================================
-# WLS MASSEY SOLVER
+# WLS FAKERONJAN WLS SOLVER
 # =========================================================
 
 def _apply_margin_transform(margin, transform, cap):
@@ -452,9 +452,9 @@ def _connected_components(teams, edges):
     return out
 
 
-def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap, season):
+def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap, season):
     """
-    Solve for team Massey ratings on a single rolling window.
+    Solve for team fakeronjan WLS ratings on a single rolling window.
 
     Zero-sum constraint is applied PER (connected component, league) — so AL and NL
     are independently centered at zero within each component. This prevents the small
@@ -548,7 +548,7 @@ _MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
 
 def compute_ratings(master_df, existing_ratings_df):
     """
-    Compute per-game-day Massey power ratings using a season-aware rolling window
+    Compute per-game-day fakeronjan WLS power ratings using a season-aware rolling window
     (WINDOW_MULTIPLIER × games-per-team-this-season). Skips dates already present in
     existing_ratings_df. Re-processes the most recent RECOMPUTE_TAIL_DAYS ranking_ids
     each run to absorb late-arriving data.
@@ -615,7 +615,7 @@ def compute_ratings(master_df, existing_ratings_df):
             last_printed_ym = current_ym
 
         try:
-            ranked = _solve_massey(
+            ranked = _solve_wls(
                 window,
                 hca=HOME_COURT_ADJUSTMENT,
                 weighting_mode=WEIGHTING_MODE,
