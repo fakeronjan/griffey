@@ -949,10 +949,9 @@ function renderTeamTable() {
   const tableRows = [...rows].reverse().map(g => {
     const era = (g.display_name && g.display_name !== canonical) ? g.display_name : '';
     const isStrike = parseInt(g.season) === 1994;
-    const strikeTag = seasonTag(g.season);
     const seasonCell = era
-      ? `${g.season}${strikeTag}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
-      : `${g.season}${strikeTag}`;
+      ? `${g.season}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
+      : `${g.season}`;
     const dateLabel = isStrike ? 'Strike began Aug 12, 1994'
                     : g.season_flag === 1 ? 'End of regular season'
                     : g.season_flag === 2 ? 'End of playoffs'
