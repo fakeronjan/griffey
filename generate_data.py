@@ -513,9 +513,87 @@ for s, rs_end in rs_end_by_season.items():
         final_score = f"{int(clincher['home_pts'])}-{int(clincher['visitor_pts'])}"
     else:
         final_score = f"{int(clincher['visitor_pts'])}-{int(clincher['home_pts'])}"
-    ws_results[s] = {"champion": champ, "runner_up": ru, "series": series, "final_score": final_score}
+    # Game 1 of the WS = the EARLIEST date in ws_games (the LDS/LCS games
+    # already filtered out by the same-pair intersection above).
+    ws_g1_dt = ws_games["date_game"].min()
+    ws_results[s] = {
+        "champion": champ, "runner_up": ru,
+        "series": series, "final_score": final_score,
+        "ws_g1_date": ws_g1_dt,
+    }
 
 print(f"  WS detected: {len(ws_results)} seasons.")
+
+
+# =========================================================
+# PRE-WORLD-SERIES SNAPSHOT LOOKUP
+# =========================================================
+# For each season's WS, find the latest rating snapshot STRICTLY BEFORE
+# WS Game 1 for both the champion and runner-up. Used in the Lists
+# sub-view (matchup quality / closeness / blowouts / upsets) so the
+# "going-in" framing isn't contaminated by the WS result itself.
+# Mirrors DUNCAN's _build_pre_finals_lookup() / DILLON's week-103 pattern.
+
+print("\nComputing pre-WS snapshots (rating + PS W-L going into Game 1)...")
+
+# Cumulative PS W-L going into WS Game 1: walk team_games_sorted for each
+# (season, team), take the cum_ps_w/cum_ps_l of the LAST PS game strictly
+# before WS Game 1 (so LDS + LCS records only). If they had no PS games
+# before WS (1961-1968 pre-LCS era), record is "0-0".
+def _pre_ws_ps_record(team, season, g1_dt):
+    sub = team_games_sorted[
+        (team_games_sorted["team"] == team)
+        & (team_games_sorted["season"] == season)
+        & (team_games_sorted["is_playoff_game"])
+        & (team_games_sorted["date_game"] < g1_dt)
+    ]
+    if sub.empty:
+        return "0-0"
+    last = sub.iloc[-1]
+    return f"{int(last['cum_ps_w'])}-{int(last['cum_ps_l'])}"
+
+
+_pre_ws_lookup = {}  # (team, season) -> {rating, rank, ps_record}
+for s, info in ws_results.items():
+    g1 = info["ws_g1_date"]
+    for team in (info["champion"], info["runner_up"]):
+        season_team_rows = ratings[
+            (ratings["season"] == s)
+            & (ratings["name"] == team)
+            & (ratings["ranking_date"] < g1)
+        ]
+        if season_team_rows.empty:
+            continue
+        # Latest ranking_id strictly before WS Game 1 for this (season, team).
+        pre_id = int(season_team_rows["ranking_id"].max())
+        snap_rows = ratings[
+            (ratings["season"] == s)
+            & (ratings["name"] == team)
+            & (ratings["ranking_id"] == pre_id)
+        ]
+        if snap_rows.empty:
+            continue
+        r = snap_rows.iloc[0]
+        _pre_ws_lookup[(team, int(s))] = {
+            "rating":    round(float(r["rating"]), 3),
+            "rank":      int(r["rank"]),
+            "ps_record": _pre_ws_ps_record(team, int(s), g1),
+        }
+
+print(f"  Pre-WS snapshots computed for {len(set(s for (_, s) in _pre_ws_lookup))} seasons "
+      f"({len(_pre_ws_lookup)} team-entries).")
+
+
+def pre_ws_fields(name, season):
+    """Return the pre-WS rating/rank/PS-record block, or empty if missing."""
+    p = _pre_ws_lookup.get((name, int(season)))
+    if p is None:
+        return {}
+    return {
+        "rating_pre":    p["rating"],
+        "rank_pre":      p["rank"],
+        "ps_record_pre": p["ps_record"],
+    }
 
 
 # =========================================================
@@ -800,6 +878,7 @@ for s in sorted(ws_results.keys(), reverse=True):
             "rs_end_rank":    int(ch_rs["rank"].iloc[0]) if not ch_rs.empty else None,
             "ps_end_rating":  round(float(ch_ps["rating"].iloc[0]), 3) if not ch_ps.empty else None,
             "ps_end_rank":    int(ch_ps["rank"].iloc[0]) if not ch_ps.empty else None,
+            **pre_ws_fields(info["champion"], s),
         },
         "runner_up": {
             "team":         info["runner_up"],
@@ -811,6 +890,7 @@ for s in sorted(ws_results.keys(), reverse=True):
             "rs_end_rank":    int(ru_rs["rank"].iloc[0]) if not ru_rs.empty else None,
             "ps_end_rating":  round(float(ru_ps["rating"].iloc[0]), 3) if not ru_ps.empty else None,
             "ps_end_rank":    int(ru_ps["rank"].iloc[0]) if not ru_ps.empty else None,
+            **pre_ws_fields(info["runner_up"], s),
         },
     })
 
