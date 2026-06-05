@@ -226,6 +226,19 @@ def clean(val):
     return str(val)
 
 
+def _od_fields(r):
+    """Return rating_o/rating_d/rank_o/rank_d safely from a row. Returns
+    None for missing values so downstream consumers render '-' rather
+    than '0'. MLB labels these BAT and PIT in the UI but the underlying
+    keys stay rating_o/rating_d for fleet-wide UI helper compatibility."""
+    return {
+        'rating_o': round(float(r['rating_o']), 3) if 'rating_o' in r and not pd.isna(r['rating_o']) else None,
+        'rating_d': round(float(r['rating_d']), 3) if 'rating_d' in r and not pd.isna(r['rating_d']) else None,
+        'rank_o':   int(r['rank_o']) if 'rank_o' in r and not pd.isna(r['rank_o']) else None,
+        'rank_d':   int(r['rank_d']) if 'rank_d' in r and not pd.isna(r['rank_d']) else None,
+    }
+
+
 def slug(name):
     """URL-safe slug from team name."""
     return re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_")
@@ -578,6 +591,7 @@ for s, info in ws_results.items():
             "rating":    round(float(r["rating"]), 3),
             "rank":      int(r["rank"]),
             "ps_record": _pre_ws_ps_record(team, int(s), g1),
+            **_od_fields(r),
         }
 
 print(f"  Pre-WS snapshots computed for {len(set(s for (_, s) in _pre_ws_lookup))} seasons "
@@ -592,6 +606,10 @@ def pre_ws_fields(name, season):
     return {
         "rating_pre":    p["rating"],
         "rank_pre":      p["rank"],
+        "rating_o_pre": p.get("rating_o"),
+        "rating_d_pre": p.get("rating_d"),
+        "rank_o_pre":   p.get("rank_o"),
+        "rank_d_pre":   p.get("rank_d"),
         "ps_record_pre": p["ps_record"],
     }
 
@@ -711,6 +729,7 @@ standings_data = {
             "league":        league(r["name"], latest_season),
             "division":      division(r["name"], latest_season),
             "rating":        round(float(r["rating"]), 3),
+            **_od_fields(r),
         }
         for _, r in latest.iterrows()
     ],
@@ -765,6 +784,7 @@ for s in sorted(ratings["season"].unique()):
                 "league":           league(r["name"], s),
                 "division":         division(r["name"], s),
                 "rating":           round(float(r["rating"]), 3),
+                **_od_fields(r),
                 "regular_record":   rec.get("rs_record", "0-0"),
                 "playoff_record":   rec.get("ps_record", ""),
                 "last_match":       rec.get("last_match", ""),
@@ -816,6 +836,7 @@ for team in sorted(ratings["name"].unique()):
                 "date":             str(snap_date_ts.date()),
                 "rank":             int(r["rank"]) if not pd.isna(r["rank"]) else None,
                 "rating":           round(float(r["rating"]), 3),
+                **_od_fields(r),
                 "display_name":     display_name(team, s),
                 "league":           league(team, s),
                 "division":        division(team, s),
@@ -876,8 +897,10 @@ for s in sorted(ws_results.keys(), reverse=True):
             "ps_record":    rec_ch["ps_record"] if rec_ch is not None else "",
             "rs_end_rating":  round(float(ch_rs["rating"].iloc[0]), 3) if not ch_rs.empty else None,
             "rs_end_rank":    int(ch_rs["rank"].iloc[0]) if not ch_rs.empty else None,
+            **({f"rs_end_{k}": v for k, v in _od_fields(ch_rs.iloc[0]).items()} if not ch_rs.empty else {}),
             "ps_end_rating":  round(float(ch_ps["rating"].iloc[0]), 3) if not ch_ps.empty else None,
             "ps_end_rank":    int(ch_ps["rank"].iloc[0]) if not ch_ps.empty else None,
+            **({f"ps_end_{k}": v for k, v in _od_fields(ch_ps.iloc[0]).items()} if not ch_ps.empty else {}),
             **pre_ws_fields(info["champion"], s),
         },
         "runner_up": {
@@ -888,8 +911,10 @@ for s in sorted(ws_results.keys(), reverse=True):
             "ps_record":    rec_ru["ps_record"] if rec_ru is not None else "",
             "rs_end_rating":  round(float(ru_rs["rating"].iloc[0]), 3) if not ru_rs.empty else None,
             "rs_end_rank":    int(ru_rs["rank"].iloc[0]) if not ru_rs.empty else None,
+            **({f"rs_end_{k}": v for k, v in _od_fields(ru_rs.iloc[0]).items()} if not ru_rs.empty else {}),
             "ps_end_rating":  round(float(ru_ps["rating"].iloc[0]), 3) if not ru_ps.empty else None,
             "ps_end_rank":    int(ru_ps["rank"].iloc[0]) if not ru_ps.empty else None,
+            **({f"ps_end_{k}": v for k, v in _od_fields(ru_ps.iloc[0]).items()} if not ru_ps.empty else {}),
             **pre_ws_fields(info["runner_up"], s),
         },
     })
@@ -1001,7 +1026,7 @@ SHORT_SEASONS = {
 }
 
 
-def build_goat(flag_col, require_ws=False):
+def build_goat(flag_col, require_ws=False, sort_col="rating"):
     rows = ratings[(ratings[flag_col] == 1) & (ratings["season"].isin(ws_seasons))].copy()
 
     # Filter ghost snapshots (team in window but didn't actually play that season).
@@ -1018,7 +1043,8 @@ def build_goat(flag_col, require_ws=False):
                    {(s, info["runner_up"]) for s, info in ws_results.items()}
         rows = rows[rows.apply(lambda r: (int(r["season"]), r["name"]) in ws_teams, axis=1)]
 
-    rows = rows.sort_values("rating", ascending=False).reset_index(drop=True)
+    rows = rows[rows[sort_col].notna()]
+    rows = rows.sort_values(sort_col, ascending=False).reset_index(drop=True)
     top = rows.head(GOAT_TOP_N)
     out = []
     for i, r in top.iterrows():
@@ -1039,18 +1065,27 @@ def build_goat(flag_col, require_ws=False):
             "short_season_category": SHORT_SEASONS.get(s, {}).get("category", "") if s in SHORT_SEASONS else "",
             "short_season_note":     SHORT_SEASONS.get(s, {}).get("note", "")     if s in SHORT_SEASONS else "",
             "rating":       round(float(r["rating"]), 3),
+            **_od_fields(r),
             "regular_record": rec["rs_record"] if rec is not None else "",
             "playoff_record": rec["ps_record"] if rec is not None else "",
             "finals_status":  finals_status,  # 0=neither, 1=runner-up, 2=champion
         })
     return out
 
-goat_rs = build_goat("is_rs_end", require_ws=False)
-goat_ps = build_goat("is_ps_end", require_ws=True)
-with open("docs/data/goat_rs.json", "w") as f:
-    json.dump(goat_rs, f, separators=(",", ":"))
-with open("docs/data/goat_ps.json", "w") as f:
-    json.dump(goat_ps, f, separators=(",", ":"))
+# Six GOAT files: {Rating, BAT, PIT} × {RS-end, PS-end}. PS-end variants
+# require a WS appearance (champion or runner-up). Mirrors DUNCAN/LOBO.
+goat_files = [
+    ("goat_rs.json",   "is_rs_end", False, "rating"),
+    ("goat_ps.json",   "is_ps_end", True,  "rating"),
+    ("goat_rs_o.json", "is_rs_end", False, "rating_o"),
+    ("goat_rs_d.json", "is_rs_end", False, "rating_d"),
+    ("goat_ps_o.json", "is_ps_end", True,  "rating_o"),
+    ("goat_ps_d.json", "is_ps_end", True,  "rating_d"),
+]
+for fname, flag_col, require_ws, sort_col in goat_files:
+    payload = build_goat(flag_col=flag_col, require_ws=require_ws, sort_col=sort_col)
+    with open(f"docs/data/{fname}", "w") as f:
+        json.dump(payload, f, separators=(",", ":"))
 
 
 # =========================================================
@@ -1070,13 +1105,16 @@ with open("docs/data/seasons_index.json", "w") as f:
     }, f, separators=(",", ":"))
 
 
+# Reload the canonical Rating-sorted GOAT lists for the diagnostic print.
+_goat_rs_top = json.load(open("docs/data/goat_rs.json"))
+_goat_ps_top = json.load(open("docs/data/goat_ps.json"))
 print(f"\nDone. {len(teams_index)} teams, {len(seasons_index)} seasons, "
-      f"{len(ws_results)} WS detected, {len(goat_rs)} GOAT-RS, {len(goat_ps)} GOAT-PS.")
+      f"{len(ws_results)} WS detected, {len(_goat_rs_top)} GOAT-RS, {len(_goat_ps_top)} GOAT-PS.")
 print(f"\n=== GOAT-RS top 10 ===")
-for t in goat_rs[:10]:
+for t in _goat_rs_top[:10]:
     marker = " ★" if t["finals_status"] == 2 else " (RU)" if t["finals_status"] == 1 else ""
     print(f"  #{t['rank']:2d}. {t['display_name']} {t['season']}  ({t['regular_record']}, {t['rating']:+.2f}){marker}")
 print(f"\n=== GOAT-PS top 10 ===")
-for t in goat_ps[:10]:
+for t in _goat_ps_top[:10]:
     marker = " ★" if t["finals_status"] == 2 else " (RU)" if t["finals_status"] == 1 else ""
     print(f"  #{t['rank']:2d}. {t['display_name']} {t['season']}  ({t['regular_record']}, {t['rating']:+.2f}){marker}")

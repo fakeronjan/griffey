@@ -192,6 +192,24 @@
     font-variant-numeric: tabular-nums;
     color: #1a6b8a;
   }
+  /* Stacked BAT / PIT cells: value above, rank below. */
+  .od-val {
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+  .od-rank {
+    line-height: 1.15;
+    color: #888;
+    font-weight: 500;
+    font-size: 0.78em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 1px;
+  }
+  td.od-cell, th.col-od {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
   .rating-bar-wrap {
     display: flex;
     align-items: center;
@@ -411,7 +429,7 @@
 <header>
   <h1>GRIFFEY ⚾</h1>
   <p class="subtitle">MLB Power Rankings · Beta</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
   <p class="updated"><span class="cadence-inline">🔄 Updated daily</span> <span class="cadence-sep">|</span> <span id="last-updated">Loading...</span> <span class="cadence-sep">|</span> <span id="last-refreshed">Loading...</span></p>
 </header>
 
@@ -493,8 +511,9 @@
 
 <!-- GOAT TABLE -->
 <div id="goat" class="tab">
-  <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (all teams) and end of playoffs (World Series participants only).</p>
+  <p class="data-note">Top 50 single-season ratings · Pick the snapshot (end of regular season vs. end of playoffs), then the metric (overall Rating, batting only, or pitching only).</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
+  <div class="conf-pills" id="goat-metric-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
   <div class="disrupted-note disrupted-note-bottom" id="goat-disrupted-note" style="display:none"></div>
@@ -508,6 +527,11 @@
 const BASE = './data';
 let currentSeasonData = null;
 let currentSnapshot   = null;
+let goatDataRSO       = null;
+let goatDataRSD       = null;
+let goatDataPSO       = null;
+let goatDataPSD       = null;
+let goatMetric        = 'rating';  // 'rating' (overall), 'o' (BAT only), 'd' (PIT only)
 let goatDataRS        = null;
 let goatDataPS        = null;
 let goatMode          = 'ps';  // 'ps' (end of playoffs — championship contenders) or 'rs' (end of regular season)
@@ -551,6 +575,16 @@ function fmtRecord(rec) {
   if (w + l === 0) return `${w}-${l}`;
   const pct = (w / (w + l)).toFixed(3).replace(/^0/, '');
   return `${w}-${l} <span style="color:#888;font-size:0.85em">(${pct})</span>`;
+}
+
+// Stacked Batting/Pitching cell formatter: value above, dim rank below.
+// MLB labels these BAT and PIT but the underlying data keys are
+// rating_o / rating_d / rank_o / rank_d to match the fleet pattern.
+function fmtOD(rating, rank) {
+  if (rating == null) return '-';
+  const r = rating.toFixed(2);
+  if (rank == null) return r;
+  return `<div class="od-val">${r}</div><div class="od-rank">${rank}</div>`;
 }
 
 function fmtRecordStacked(reg, playoff) {
@@ -844,6 +878,8 @@ function renderStandings() {
       <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status, t.division, t.division_winner)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record)}</td>
       <td>${ratingBar(t.rating)}</td>
+      <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
+      <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
     </tr>`;
@@ -858,6 +894,8 @@ function renderStandings() {
         <th>Rank</th><th>Team</th>
         <th class="col-hide-mobile">League</th>
         <th>W-L (Pct)</th><th>Rating</th>
+        <th class="col-hide-mobile col-od">BAT</th>
+        <th class="col-hide-mobile col-od">PIT</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
       </tr></thead>
@@ -1014,6 +1052,8 @@ function renderTeamTable() {
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
+    <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_o, g.rank_o)}</td>
+    <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_d, g.rank_d)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${leagueBadge(g.league || data.league, g.finals_status, g.division, g.division_winner)}</td>
   </tr>`;
   }).join('');
@@ -1023,6 +1063,8 @@ function renderTeamTable() {
       <thead><tr>
         <th>Date</th><th style="text-align:center">Season</th><th>Last Game</th>
         <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
+        <th class="col-hide-mobile col-od">BAT</th>
+        <th class="col-hide-mobile col-od">PIT</th>
         <th class="col-hide-mobile">League</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
@@ -1154,6 +1196,8 @@ function renderChampions() {
       ${teamTd}
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
+      <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_rating_o, t.ps_end_rank_o)}</td>
+      <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_rating_d, t.ps_end_rank_d)}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.rs_record, t.ps_record)}</td>`;
   }
 
@@ -1192,11 +1236,15 @@ function renderChampions() {
         <th class="col-champ">Champion</th>
         <th class="col-champ col-hide-mobile">Rank</th>
         <th class="col-champ">Rating</th>
+        <th class="col-champ col-hide-mobile col-od">BAT</th>
+        <th class="col-champ col-hide-mobile col-od">PIT</th>
         <th class="col-champ col-hide-mobile">W-L</th>
         <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
         <th class="col-ru">Runner-Up</th>
         <th class="col-ru col-hide-mobile">Rank</th>
         <th class="col-ru">Rating</th>
+        <th class="col-ru col-hide-mobile col-od">BAT</th>
+        <th class="col-ru col-hide-mobile col-od">PIT</th>
         <th class="col-ru col-hide-mobile">W-L</th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -1592,12 +1640,20 @@ document.querySelectorAll('#history-rank-pills button').forEach(btn => {
 // GOAT Table
 async function loadGoat() {
   try {
-    const [r1, r2] = await Promise.all([
+    const [r1, r2, r3, r4, r5, r6] = await Promise.all([
       fetch(`${BASE}/goat_rs.json`),
       fetch(`${BASE}/goat_ps.json`),
+      fetch(`${BASE}/goat_rs_o.json`),
+      fetch(`${BASE}/goat_rs_d.json`),
+      fetch(`${BASE}/goat_ps_o.json`),
+      fetch(`${BASE}/goat_ps_d.json`),
     ]);
-    goatDataRS = await r1.json();
-    goatDataPS = await r2.json();
+    goatDataRS  = await r1.json();
+    goatDataPS  = await r2.json();
+    goatDataRSO = await r3.json();
+    goatDataRSD = await r4.json();
+    goatDataPSO = await r5.json();
+    goatDataPSD = await r6.json();
     renderGoat();
   } catch(e) {
     document.getElementById('goat-table-wrap').innerHTML =
@@ -1605,8 +1661,20 @@ async function loadGoat() {
   }
 }
 
+// Pick (dataset, value-field, header-label) for the current (metric, mode) combo.
+function goatPick() {
+  if (goatMetric === 'o') {
+    return { data: goatMode === 'rs' ? goatDataRSO : goatDataPSO, field: 'rating_o', header: 'Batting' };
+  }
+  if (goatMetric === 'd') {
+    return { data: goatMode === 'rs' ? goatDataRSD : goatDataPSD, field: 'rating_d', header: 'Pitching' };
+  }
+  return   { data: goatMode === 'rs' ? goatDataRS  : goatDataPS,  field: 'rating',   header: 'Rating' };
+}
+
 function renderGoat() {
-  const data = goatMode === 'rs' ? goatDataRS : goatDataPS;
+  const pick = goatPick();
+  const data = pick.data;
   if (!data) return;
   const teams = goatConf === 'all'
     ? data
@@ -1621,12 +1689,13 @@ function renderGoat() {
       ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${t.season}">${label}</td>`
       : `<td class="team-cell">${label}</td>`;
     const covidTag = seasonTag(t.season);
+    const val = t[pick.field];
     return `<tr>
       <td class="rank-cell">${t.rank}</td>
       <td class="season-cell linked" data-season-link="${t.season}" style="white-space:nowrap">${t.season}${covidTag}</td>
       ${teamTd}
       <td class="col-hide-mobile">${leagueBadge(t.league, t.finals_status, t.division, t.division_winner)}</td>
-      <td>${ratingBar(t.rating)}</td>
+      <td>${ratingBar(val)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap" class="col-hide-mobile">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>
     </tr>`;
   }).join('');
@@ -1638,7 +1707,7 @@ function renderGoat() {
         <th style="text-align:center">Season</th>
         <th>Team</th>
         <th class="col-hide-mobile">League</th>
-        <th>Rating</th>
+        <th>${pick.header}</th>
         <th class="col-hide-mobile">W-L</th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -1653,6 +1722,11 @@ buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; rende
 buildConfPills('goat-mode-pills',      goatMode,      v => { goatMode = v; renderGoat(); }, [
   { value: 'rs', label: 'End of regular season' },
   { value: 'ps', label: 'End of playoffs' },
+]);
+buildConfPills('goat-metric-pills',    goatMetric,    v => { goatMetric = v; renderGoat(); }, [
+  { value: 'rating', label: 'Rating (overall)' },
+  { value: 'o',      label: 'Batting only' },
+  { value: 'd',      label: 'Pitching only' },
 ]);
 buildConfPills('ts-view-pills', tsView, v => {
   tsView = v;

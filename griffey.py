@@ -452,6 +452,102 @@ def _connected_components(teams, edges):
     return out
 
 
+def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
+    """
+    Solve for team BATTING + PITCHING WLS ratings (MLB analog of DUNCAN's
+    offense / defense split). Each game contributes 2 rows:
+      home_BAT - visitor_PIT = home_runs - mu - hca * off_share
+      visitor_BAT - home_PIT = visitor_runs - mu + hca * def_share
+
+    Where mu = league mean runs / team / game across the window — auto-
+    computed from the data so MLB's ~4.5 runs/team/game scale is handled
+    natively (vs DUNCAN's ~113 points/team/game).
+
+    Like _solve_wls above, each (connected component, league) gets its own
+    pair of zero-sum anchors (one on BAT, one on PIT). AL and NL each
+    centered independently, components handle 2020 COVID regional schedule.
+
+    BAT > 0 = team scores above-average runs.
+    PIT > 0 = team allows below-average runs (i.e. good pitching).
+
+    No half-equation cap (MARGIN_CAP operates on net margin in the main
+    solver; the calibration delta downstream re-anchors BAT + PIT = Rating
+    so the cap effectively carries through).
+    """
+    teams = sorted(set(window_df["home_team_name"]) | set(window_df["visitor_team_name"]))
+    team_idx = {t: i for i, t in enumerate(teams)}
+    n_teams = len(teams)
+    n_games = len(window_df)
+
+    home_pts    = window_df["home_pts"].to_numpy(dtype=float)
+    visitor_pts = window_df["visitor_pts"].to_numpy(dtype=float)
+    weights     = window_df["date_weight"].to_numpy(dtype=float)
+    home_names    = window_df["home_team_name"].to_numpy()
+    visitor_names = window_df["visitor_team_name"].to_numpy()
+
+    mu = (home_pts.sum() + visitor_pts.sum()) / (2 * n_games)
+    h_off_share = float(hca_off_share)
+    h_def_share = 1.0 - h_off_share
+
+    # Connected components × era-aware league → one zero-sum anchor per side
+    comp_map = _connected_components(teams, zip(home_names, visitor_names))
+    league_lookup = {t: _team_league(t, season) for t in teams}
+    anchor_groups = {}  # (comp_id, league) -> [teams]
+    for t in teams:
+        anchor_groups.setdefault((comp_map[t], league_lookup[t]), []).append(t)
+    anchor_keys = sorted(anchor_groups.keys())
+
+    # 2 rows per game + 2 zero-sum constraints per (component, league)
+    n_rows = 2 * n_games + 2 * len(anchor_keys)
+    X = np.zeros((n_rows, 2 * n_teams))
+    y = np.zeros(n_rows)
+    w = np.zeros(n_rows)
+
+    for i in range(n_games):
+        h_idx = team_idx[home_names[i]]
+        v_idx = team_idx[visitor_names[i]]
+        # home_BAT - visitor_PIT = home_runs - mu - hca*h_off_share
+        X[2*i,     h_idx]            = 1.0
+        X[2*i,     n_teams + v_idx]  = -1.0
+        y_home = home_pts[i] - mu - hca * h_off_share
+        # visitor_BAT - home_PIT = visitor_runs - mu + hca*h_def_share
+        X[2*i + 1, v_idx]            = 1.0
+        X[2*i + 1, n_teams + h_idx]  = -1.0
+        y_vis  = visitor_pts[i] - mu + hca * h_def_share
+
+        if weighting_mode == "wls":
+            y[2*i]     = y_home
+            y[2*i + 1] = y_vis
+            w[2*i]     = weights[i]
+            w[2*i + 1] = weights[i]
+        else:
+            raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
+
+    # Zero-sum on BAT (per anchor group) + zero-sum on PIT (per anchor group)
+    for k, key in enumerate(anchor_keys):
+        bat_row = 2 * n_games + k
+        pit_row = 2 * n_games + len(anchor_keys) + k
+        for t in anchor_groups[key]:
+            X[bat_row, team_idx[t]] = 1.0
+            X[pit_row, n_teams + team_idx[t]] = 1.0
+        y[bat_row] = 0.0
+        y[pit_row] = 0.0
+        w[bat_row] = 1.0e8
+        w[pit_row] = 1.0e8
+
+    sqrt_w = np.sqrt(w)
+    Xw = X * sqrt_w[:, None]
+    yw = y * sqrt_w
+    sol, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
+
+    out = pd.DataFrame({
+        "name":     teams,
+        "rating_o": sol[:n_teams],
+        "rating_d": sol[n_teams:],
+    })
+    return out
+
+
 def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap, season):
     """
     Solve for team fakeronjan WLS ratings on a single rolling window.
@@ -623,10 +719,26 @@ def compute_ratings(master_df, existing_ratings_df):
                 margin_cap=MARGIN_CAP,
                 season=season,
             )
+            ranked_od = _solve_wls_od(
+                window,
+                hca=HOME_COURT_ADJUSTMENT,
+                weighting_mode=WEIGHTING_MODE,
+                season=season,
+            )
         except Exception as e:
             print(f"  [skip] grouped_date_id {i} ({current_date.date()}): {e}")
             continue
 
+        ranked = ranked.merge(ranked_od, on="name", how="left")
+        # Calibrate so BAT + PIT = Rating exactly. Shift each team's
+        # (BAT_raw, PIT_raw) by a per-team delta. The split's shape
+        # (BAT - PIT) is preserved; only the absolute level is anchored
+        # to the main rating. Main solver's MARGIN_CAP carries through.
+        delta = (ranked["rating"] - ranked["rating_o"] - ranked["rating_d"]) / 2.0
+        ranked["rating_o"] = ranked["rating_o"] + delta
+        ranked["rating_d"] = ranked["rating_d"] + delta
+        ranked["rank_o"] = ranked["rating_o"].rank(ascending=False, method="min").astype(int)
+        ranked["rank_d"] = ranked["rating_d"].rank(ascending=False, method="min").astype(int)
         ranked["ranking_date"] = current_date
         ranked["ranking_id"]   = i
         ranked["season"]       = season
