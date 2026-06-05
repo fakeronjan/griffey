@@ -496,6 +496,10 @@
       <button data-rank="worst-champs">Worst champs</button>
       <button data-rank="best-losers">Best losers</button>
       <button data-rank="worst-losers">Worst losers</button>
+      <button data-rank="best-bat-champs">Best batting champs</button>
+      <button data-rank="best-pit-champs">Best pitching champs</button>
+      <button data-rank="worst-bat-champs">Worst batting champs</button>
+      <button data-rank="worst-pit-champs">Worst pitching champs</button>
       <button data-rank="best-matchup">Best matchup</button>
       <button data-rank="worst-matchup">Worst matchup</button>
       <button data-rank="closest">Closest predicted</button>
@@ -1261,6 +1265,8 @@ function renderChampions() {
 // the canonical measure of how strong the team ultimately was.
 
 const PRE_WS_MODES = new Set(['best-matchup', 'worst-matchup', 'closest', 'blowout', 'upset']);
+const BAT_MODES    = new Set(['best-bat-champs', 'worst-bat-champs']);
+const PIT_MODES    = new Set(['best-pit-champs', 'worst-pit-champs']);
 
 // Map EOS field names onto the {rating, rank, ps_record} keys the
 // Lists code expects. Keeps the per-row block code agnostic of whether
@@ -1280,6 +1286,12 @@ function preWsView(team) {
     rank:      team.rank_pre,
     ps_record: team.ps_record_pre,
   };
+}
+function batView(team) {
+  return { ...team, rating: team.ps_end_rating_o, rank: team.ps_end_rank_o };
+}
+function pitView(team) {
+  return { ...team, rating: team.ps_end_rating_d, rank: team.ps_end_rank_d };
 }
 
 function fmtSigned(n) { return (n >= 0 ? '+' : '') + n.toFixed(2); }
@@ -1324,12 +1336,17 @@ function renderRankings(rankType) {
   if (rankType === 'repeat-champs') return renderRepeatChamps();
   if (rankType === 'rematches')     return renderRematches();
 
-  const isPreWs = PRE_WS_MODES.has(rankType);
-  // Filter to rated WS only. For EOS lists need ps_end_rating; for pre-WS
-  // lists need rating_pre. Pre-1962 entries (pre_rated:true) are excluded
-  // since they have no ratings at all.
+  const isBat       = BAT_MODES.has(rankType);
+  const isPit       = PIT_MODES.has(rankType);
+  const isPreWs     = PRE_WS_MODES.has(rankType);
+  const metricLabel = isBat ? 'Batting' : isPit ? 'Pitching' : 'Rating';
+  // Filter to rated WS only. For EOS lists need ps_end_rating; for BAT/PIT
+  // need the corresponding side-specific rating; for pre-WS need rating_pre.
+  // Pre-1962 entries (pre_rated:true) are excluded since they have no ratings.
   const entries = (championsData['MLB'] || []).filter(e => {
     if (!e.champion || !e.runner_up) return false;
+    if (isBat) return e.champion.ps_end_rating_o != null && e.runner_up.ps_end_rating_o != null;
+    if (isPit) return e.champion.ps_end_rating_d != null && e.runner_up.ps_end_rating_d != null;
     if (isPreWs) {
       return e.champion.rating_pre != null && e.runner_up.rating_pre != null;
     }
@@ -1337,8 +1354,11 @@ function renderRankings(rankType) {
   });
 
   const rows = entries.map(e => {
-    const c = isPreWs ? preWsView(e.champion)  : eosView(e.champion);
-    const r = isPreWs ? preWsView(e.runner_up) : eosView(e.runner_up);
+    let c, r;
+    if (isPreWs)     { c = preWsView(e.champion); r = preWsView(e.runner_up); }
+    else if (isBat)  { c = batView(e.champion);   r = batView(e.runner_up); }
+    else if (isPit)  { c = pitView(e.champion);   r = pitView(e.runner_up); }
+    else             { c = eosView(e.champion);   r = eosView(e.runner_up); }
     // Matchup quality = max(Rating) + 2 * min(Rating). The 2x weight on the
     // weaker team penalises lopsided matchups — a "great matchup" needs both
     // teams to be strong, not just one elite team padding the combined.
@@ -1377,6 +1397,26 @@ function renderRankings(rankType) {
       note   = 'Bottom 10 runner-ups by end-of-playoffs rating. The weakest teams ever to lose a World Series.';
       mode   = 'loser-vs-champ';
       break;
+    case 'best-bat-champs':
+      sorted = [...rows].sort((a, b) => b.champ.rating - a.champ.rating).slice(0, 10);
+      note   = 'Top 10 champions by Batting rating. The most explosive offenses ever to win a World Series.';
+      mode   = 'team-vs-opp';
+      break;
+    case 'worst-bat-champs':
+      sorted = [...rows].sort((a, b) => a.champ.rating - b.champ.rating).slice(0, 10);
+      note   = 'Bottom 10 champions by Batting rating. The weakest offenses ever to ride a championship pitching staff.';
+      mode   = 'team-vs-opp';
+      break;
+    case 'best-pit-champs':
+      sorted = [...rows].sort((a, b) => b.champ.rating - a.champ.rating).slice(0, 10);
+      note   = 'Top 10 champions by Pitching rating. The most dominant staffs ever to win a World Series.';
+      mode   = 'team-vs-opp';
+      break;
+    case 'worst-pit-champs':
+      sorted = [...rows].sort((a, b) => a.champ.rating - b.champ.rating).slice(0, 10);
+      note   = 'Bottom 10 champions by Pitching rating. The weakest staffs ever to win on the back of an elite lineup.';
+      mode   = 'team-vs-opp';
+      break;
     case 'best-matchup':
       sorted = [...rows].sort((a, b) => b.quality - a.quality).slice(0, 10);
       note   = 'Top 10 by pre-WS matchup quality. Formula: max(Rating) + 2 × min(Rating), which weights the weaker team double to reward balanced strength over one-sided star power.';
@@ -1408,11 +1448,11 @@ function renderRankings(rankType) {
 
   document.getElementById('history-rank-note').textContent = note;
   document.getElementById('history-rank-table-wrap').innerHTML =
-    sorted.length ? renderRankingTable(sorted, mode) : '<p class="loading">No data.</p>';
+    sorted.length ? renderRankingTable(sorted, mode, metricLabel) : '<p class="loading">No data.</p>';
   attachLinks();
 }
 
-function renderRankingTable(rows, mode) {
+function renderRankingTable(rows, mode, metricLabel) {
   const showCombined = (mode === 'matchup');
   const showDiff     = (mode === 'spread');
   const isPreWs      = showCombined || showDiff;
@@ -1430,10 +1470,14 @@ function renderRankingTable(rows, mode) {
     ? `<th class="sort-col">Pred. Diff${preTag}</th>`
     : '';
 
+  // Column-header label: defaults to "Rating" but swaps to "Batting" /
+  // "Pitching" when an O/D list is active, so the visible sort-key column
+  // matches the list semantics.
+  const label = metricLabel || 'Rating';
   const sortLeftRating = !isPreWs;
   const leftRatingHeader = sortLeftRating
-    ? `<th class="col-champ sort-col">Rating</th>`
-    : `<th class="col-champ">Rating${preTag}</th>`;
+    ? `<th class="col-champ sort-col">${label}</th>`
+    : `<th class="col-champ">${label}${preTag}</th>`;
 
   const head = `
     <th>#</th>
@@ -1445,7 +1489,7 @@ function renderRankingTable(rows, mode) {
     <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
     <th class="col-ru">${rightLabel}</th>
     <th class="col-ru col-hide-mobile">Rank</th>
-    <th class="col-ru">Rating${preTag}</th>
+    <th class="col-ru">${label}${preTag}</th>
     <th class="col-ru col-hide-mobile">W-L</th>
     ${metricHeader}`;
 
