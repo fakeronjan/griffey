@@ -277,6 +277,23 @@ def slug(name):
     return re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_")
 
 
+# all_mlb_games.csv bakes the canonical franchise name into the per-team
+# result string (e.g. "W 5-3 vs. Cleveland Guardians" for a 2007 game when
+# Cleveland was still the Indians). Rewrite the opponent portion with the
+# era-appropriate display name so historical Team Summary / Standings views
+# show the franchise's contemporary name. Mirrors DUNCAN's helper.
+_LAST_MATCH_RE = re.compile(r"^([WL])\s+(\d+-\d+)\s+(vs\.?|@)\s+(.+)$")
+
+def era_aware_last_match(raw, season):
+    if not raw:
+        return raw
+    m = _LAST_MATCH_RE.match(str(raw))
+    if not m:
+        return raw
+    letter, score, venue, opponent = m.groups()
+    return f"{letter} {score} {venue} {display_name(opponent.strip(), season)}"
+
+
 # =========================================================
 # DATA LOAD
 # =========================================================
@@ -494,7 +511,10 @@ snap_records["ps_record"] = snap_records.apply(
               if (pd.notna(r["cum_ps_w"]) and (r["cum_ps_w"] + r["cum_ps_l"]) > 0) else "",
     axis=1,
 )
-snap_records["last_match"]      = snap_records["result"].fillna("")
+snap_records["last_match"] = snap_records.apply(
+    lambda r: era_aware_last_match(r["result"] or "", int(r["season"])),
+    axis=1,
+)
 snap_records["last_match_date"] = snap_records["actual_game_date"].dt.strftime("%Y-%m-%d").fillna("")
 
 # Index for fast lookup: (season, team, ranking_date) -> dict
