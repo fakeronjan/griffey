@@ -429,7 +429,7 @@
 <header>
   <h1>GRIFFEY ⚾</h1>
   <p class="subtitle">MLB Power Rankings · Beta</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). Park Factor estimates how much the home ballpark inflates or suppresses runs, independent of team skill - Coors Field's thin air sits at the top, marine-layer parks at the bottom. Title Odds is the model's probability that the team wins the World Series, given its ratings and current bracket position; league-wide odds sum to 100%. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). Park Factor estimates how much the home ballpark inflates or suppresses runs, independent of team skill - Coors Field's thin air sits at the top, marine-layer parks at the bottom. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
   <p class="updated"><span class="cadence-inline">🔄 Updated daily</span> <span class="cadence-sep">|</span> <span id="last-updated">Loading...</span> <span class="cadence-sep">|</span> <span id="last-refreshed">Loading...</span></p>
 </header>
 
@@ -912,7 +912,7 @@ function renderStandings() {
         <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
         <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game, independent of team skill. Rank 1 = most hitter-friendly park.">PARK</th>
-        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Batting, Pitching, playoff progress, current series state) at this snapshot. League-wide probabilities sum to 100%. Trained on every other season's snapshots since 1969.">TITLE ODDS</th>
+        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Rating, Batting, Pitching, season progress, current playoff series state if applicable) at this snapshot. Trained on every other season's snapshots since 1969. League-wide probabilities sum to 100%.">TITLE ODDS</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
       </tr></thead>
@@ -1085,7 +1085,7 @@ function renderTeamTable() {
         <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
         <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game, independent of team skill. Rank 1 = most hitter-friendly park.">PARK</th>
-        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Batting, Pitching, playoff progress, current series state) at this snapshot. League-wide probabilities sum to 100%. Trained on every other season's snapshots since 1969.">TITLE ODDS</th>
+        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Rating, Batting, Pitching, season progress, current playoff series state if applicable) at this snapshot. Trained on every other season's snapshots since 1969. League-wide probabilities sum to 100%.">TITLE ODDS</th>
         <th class="col-hide-mobile">League</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
