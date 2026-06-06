@@ -817,7 +817,12 @@ def _to_snap_state(s_int, team, snap_date):
     rs_end = rs_end_by_season.get(s_int)
     total_rounds = _to_total_rounds(s_int)
 
-    if rs_end is None or snap_date <= rs_end:
+    # Strict `<` so the rs_end snapshot itself falls through to the
+    # in_field gate below - non-playoff teams correctly read as null
+    # (rather than getting RS-progress odds) at the moment RS ends. PS
+    # teams then get post-RS progress (0.55) via the "no series started"
+    # branch at the end of the walker.
+    if rs_end is None or snap_date < rs_end:
         # RS phase: progress 0 -> 0.50
         gp = _to_games_played(s_int, team, snap_date)
         progress = PHASE_RS_MAX_TO * min(gp / _to_rs_games(s_int), 1.0)
