@@ -807,28 +807,44 @@ def _to_snap_state(s_int, team, snap_date):
     if not in_field:
         return (False, False, None, 0, 0)
 
-    elim = _to_eliminated.get((s_int, team))
-    if elim is not None and snap_date >= elim:
-        return (True, True, None, 0, 0)
-
-    # Champion: WS series won, snap >= WS clinch date
-    if _to_champion.get(s_int) == team:
-        ws_series = next((s for s in _to_team_path[(s_int, team)] if s['gametype'] == 'worldseries'), None)
-        if ws_series and snap_date >= ws_series['end']:
-            return (True, False, PHASE_CHAMPION_TO, 0, 0)
-
-    # Walk team's series in chrono order: find current or last-won.
+    # Walk team's series chronologically, evaluating each series's STATE
+    # AS-OF snap_date (not end-of-season). This is critical to:
+    #   1. Correctly classify a team on a clinch day as "advanced past this
+    #      round" rather than "still in this round at series_w=4". Without
+    #      this, the snapshot taken on the clinching game's date carried the
+    #      previous round's progress + a full series_w into the LR features,
+    #      which produced spurious mid-bracket flips (2001 NYY pre-WS Game 1
+    #      reading as the favorite despite ARI's higher rating).
+    #   2. Detect eliminations dynamically (rather than relying on the
+    #      end-of-season _to_eliminated lookup), so in-progress series in the
+    #      current season are scored correctly.
     path = _to_team_path[(s_int, team)]
     current = None
     last_won = None
     for s in path:
         if s['start'] > snap_date:
             break
-        if s['end'] >= snap_date:
-            current = s
-            break
-        if s['won_series']:
+        # Compute series state as-of snap_date.
+        w_at = l_at = 0
+        for d, sw, sl in s['state']:
+            if d <= snap_date:
+                w_at, l_at = sw, sl
+            else:
+                break
+        clinch = s['clinch'] if s['clinch'] is not None else 99
+        decided_as_of = max(w_at, l_at) >= clinch
+        team_won = decided_as_of and w_at > l_at
+        team_lost = decided_as_of and l_at > w_at
+        if team_lost:
+            return (True, True, None, 0, 0)  # eliminated
+        if team_won:
             last_won = s
+            continue
+        # Series is in progress as-of snap_date (or hasn't started any games
+        # but s.start <= snap_date, which happens only on series-start day
+        # before the first game).
+        current = s
+        break
 
     if current is not None:
         w = l = 0
@@ -843,13 +859,15 @@ def _to_snap_state(s_int, team, snap_date):
         return (True, False, progress, w_pad, l_pad)
 
     if last_won is not None:
-        # Between rounds: just advanced past last_won's round.
+        # Between rounds (or just clinched a round and the next hasn't
+        # started): advance to the next round's progress with empty series
+        # state.
         next_depth = _to_depth_in_era(last_won['round'], s_int) + 1
         if next_depth > total_rounds:
             return (True, False, PHASE_CHAMPION_TO, 0, 0)
         return (True, False, _to_progress(next_depth, total_rounds), 0, 0)
 
-    # In field but no series started yet (after RS-end, before WC Game 1).
+    # In field but no series started yet (after RS-end, before round-1 G1).
     return (True, False, PHASE_POST_RS_TO, 0, 0)
 
 
