@@ -454,21 +454,37 @@ def _connected_components(teams, edges):
 
 def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
     """
-    Solve for team BATTING + PITCHING WLS ratings (MLB analog of DUNCAN's
-    offense / defense split). Each game contributes 2 rows:
-      home_BAT - visitor_PIT = home_runs - mu - hca * off_share
-      visitor_BAT - home_PIT = visitor_runs - mu + hca * def_share
+    Solve jointly for team BATTING + PITCHING ratings AND home-park run-
+    environment factors. Each game contributes 2 rows:
+      home_BAT - visitor_PIT + PARK[home] = home_runs - mu - hca * off_share
+      visitor_BAT - home_PIT + PARK[home] = visitor_runs - mu + hca * def_share
+
+    Adding PARK[home] to BOTH equations captures the well-known sabermetric
+    fact that a park's run environment inflates / suppresses runs for the
+    home AND visiting team equally (Coors' thin air helps every batter,
+    Petco's marine layer hurts every batter, etc.). Modeling PARK as a
+    separate latent variable disentangles "team's true offensive skill"
+    from "team's home park's run environment" so the Rockies' BAT doesn't
+    pick up Coors inflation that should be attributed to the park.
+
+    Parameter layout: [BAT_1..n, PIT_1..n, PARK_1..n]. Constraints:
+      • Per (component, league) zero-sum on BAT (existing — AL and NL
+        each centered at zero within each connected component).
+      • Per (component, league) zero-sum on PIT (existing).
+      • Single GLOBAL zero-sum on PARK — an "average park" has factor 0,
+        positive PARK = hitter's park (Coors / Yankee Stadium), negative
+        PARK = pitcher's park (Petco / Marlins Park). Park environment is
+        a physical property, not a league construct, so the constraint is
+        cross-league.
+
+    The main Rating is park-neutral by construction (home_margin = home -
+    visitor + HCA, and PARK[home] appears on both sides of the margin so
+    it cancels). After the downstream calibration delta, BAT + PIT still
+    equals Rating exactly; PARK is reported separately.
 
     Where mu = league mean runs / team / game across the window — auto-
     computed from the data so MLB's ~4.5 runs/team/game scale is handled
     natively (vs DUNCAN's ~113 points/team/game).
-
-    Like _solve_wls above, each (connected component, league) gets its own
-    pair of zero-sum anchors (one on BAT, one on PIT). AL and NL each
-    centered independently, components handle 2020 COVID regional schedule.
-
-    BAT > 0 = team scores above-average runs.
-    PIT > 0 = team allows below-average runs (i.e. good pitching).
 
     No half-equation cap (MARGIN_CAP operates on net margin in the main
     solver; the calibration delta downstream re-anchors BAT + PIT = Rating
@@ -497,22 +513,25 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
         anchor_groups.setdefault((comp_map[t], league_lookup[t]), []).append(t)
     anchor_keys = sorted(anchor_groups.keys())
 
-    # 2 rows per game + 2 zero-sum constraints per (component, league)
-    n_rows = 2 * n_games + 2 * len(anchor_keys)
-    X = np.zeros((n_rows, 2 * n_teams))
+    # 2 rows per game + 2 zero-sum per (component, league) + 1 global PARK
+    n_rows   = 2 * n_games + 2 * len(anchor_keys) + 1
+    n_params = 3 * n_teams  # BAT, PIT, PARK
+    X = np.zeros((n_rows, n_params))
     y = np.zeros(n_rows)
     w = np.zeros(n_rows)
 
     for i in range(n_games):
         h_idx = team_idx[home_names[i]]
         v_idx = team_idx[visitor_names[i]]
-        # home_BAT - visitor_PIT = home_runs - mu - hca*h_off_share
-        X[2*i,     h_idx]            = 1.0
-        X[2*i,     n_teams + v_idx]  = -1.0
+        # home_BAT - visitor_PIT + PARK[home] = home_runs - mu - hca*h_off_share
+        X[2*i,     h_idx]                    = 1.0
+        X[2*i,     n_teams + v_idx]          = -1.0
+        X[2*i,     2 * n_teams + h_idx]      = 1.0
         y_home = home_pts[i] - mu - hca * h_off_share
-        # visitor_BAT - home_PIT = visitor_runs - mu + hca*h_def_share
-        X[2*i + 1, v_idx]            = 1.0
-        X[2*i + 1, n_teams + h_idx]  = -1.0
+        # visitor_BAT - home_PIT + PARK[home] = visitor_runs - mu + hca*h_def_share
+        X[2*i + 1, v_idx]                    = 1.0
+        X[2*i + 1, n_teams + h_idx]          = -1.0
+        X[2*i + 1, 2 * n_teams + h_idx]      = 1.0
         y_vis  = visitor_pts[i] - mu + hca * h_def_share
 
         if weighting_mode == "wls":
@@ -523,17 +542,24 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
         else:
             raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
 
-    # Zero-sum on BAT (per anchor group) + zero-sum on PIT (per anchor group)
+    # Zero-sum on BAT + PIT per (component, league)
     for k, key in enumerate(anchor_keys):
         bat_row = 2 * n_games + k
         pit_row = 2 * n_games + len(anchor_keys) + k
         for t in anchor_groups[key]:
-            X[bat_row, team_idx[t]] = 1.0
-            X[pit_row, n_teams + team_idx[t]] = 1.0
+            X[bat_row, team_idx[t]]              = 1.0
+            X[pit_row, n_teams + team_idx[t]]    = 1.0
         y[bat_row] = 0.0
         y[pit_row] = 0.0
         w[bat_row] = 1.0e8
         w[pit_row] = 1.0e8
+
+    # Global zero-sum on PARK (single constraint across all teams)
+    park_row = 2 * n_games + 2 * len(anchor_keys)
+    for i in range(n_teams):
+        X[park_row, 2 * n_teams + i] = 1.0
+    y[park_row] = 0.0
+    w[park_row] = 1.0e8
 
     sqrt_w = np.sqrt(w)
     Xw = X * sqrt_w[:, None]
@@ -541,9 +567,10 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
     sol, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
 
     out = pd.DataFrame({
-        "name":     teams,
-        "rating_o": sol[:n_teams],
-        "rating_d": sol[n_teams:],
+        "name":        teams,
+        "rating_o":    sol[:n_teams],
+        "rating_d":    sol[n_teams:2 * n_teams],
+        "park_factor": sol[2 * n_teams:3 * n_teams],
     })
     return out
 
@@ -734,11 +761,15 @@ def compute_ratings(master_df, existing_ratings_df):
         # (BAT_raw, PIT_raw) by a per-team delta. The split's shape
         # (BAT - PIT) is preserved; only the absolute level is anchored
         # to the main rating. Main solver's MARGIN_CAP carries through.
+        # park_factor is independent of BAT/PIT and isn't touched by the
+        # calibration — it stays in raw run units (negative = pitcher's
+        # park, positive = hitter's park).
         delta = (ranked["rating"] - ranked["rating_o"] - ranked["rating_d"]) / 2.0
         ranked["rating_o"] = ranked["rating_o"] + delta
         ranked["rating_d"] = ranked["rating_d"] + delta
         ranked["rank_o"] = ranked["rating_o"].rank(ascending=False, method="min").astype(int)
         ranked["rank_d"] = ranked["rating_d"].rank(ascending=False, method="min").astype(int)
+        ranked["park_factor_rank"] = ranked["park_factor"].rank(ascending=False, method="min").astype(int)
         ranked["ranking_date"] = current_date
         ranked["ranking_id"]   = i
         ranked["season"]       = season

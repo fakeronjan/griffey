@@ -429,7 +429,7 @@
 <header>
   <h1>GRIFFEY ⚾</h1>
   <p class="subtitle">MLB Power Rankings · Beta</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). Park Factor estimates how much the home ballpark inflates or suppresses runs, independent of team skill — Coors Field's thin air sits at the top, marine-layer parks at the bottom. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
   <p class="updated"><span class="cadence-inline">🔄 Updated daily</span> <span class="cadence-sep">|</span> <span id="last-updated">Loading...</span> <span class="cadence-sep">|</span> <span id="last-refreshed">Loading...</span></p>
 </header>
 
@@ -884,6 +884,7 @@ function renderStandings() {
       <td>${ratingBar(t.rating)}</td>
       <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
       <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
+      <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.park_factor, t.park_factor_rank)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
     </tr>`;
@@ -898,8 +899,9 @@ function renderStandings() {
         <th>Rank</th><th>Team</th>
         <th class="col-hide-mobile">League</th>
         <th>W-L (Pct)</th><th>Rating</th>
-        <th class="col-hide-mobile col-od">BAT</th>
-        <th class="col-hide-mobile col-od">PIT</th>
+        <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
+        <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
+        <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Independent of team skill — rank 1 = most hitter-friendly park.">PARK</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
       </tr></thead>
@@ -1058,6 +1060,7 @@ function renderTeamTable() {
     <td>${ratingBar(g.rating)}</td>
     <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_o, g.rank_o)}</td>
     <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_d, g.rank_d)}</td>
+    <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.park_factor, g.park_factor_rank)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${leagueBadge(g.league || data.league, g.finals_status, g.division, g.division_winner)}</td>
   </tr>`;
   }).join('');
@@ -1067,8 +1070,9 @@ function renderTeamTable() {
       <thead><tr>
         <th>Date</th><th style="text-align:center">Season</th><th>Last Game</th>
         <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
-        <th class="col-hide-mobile col-od">BAT</th>
-        <th class="col-hide-mobile col-od">PIT</th>
+        <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
+        <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
+        <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Independent of team skill — rank 1 = most hitter-friendly park.">PARK</th>
         <th class="col-hide-mobile">League</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
@@ -1202,6 +1206,7 @@ function renderChampions() {
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
       <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_rating_o, t.ps_end_rank_o)}</td>
       <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_rating_d, t.ps_end_rank_d)}</td>
+      <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_park_factor, t.ps_end_park_factor_rank)}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.rs_record, t.ps_record)}</td>`;
   }
 
@@ -1212,7 +1217,7 @@ function renderChampions() {
       // 1994 strike — single-cell row across the table with a callout.
       return `<tr style="background:#fdf3f3">
         <td class="season-cell linked" data-season-link="${e.season}">${e.season}${seasonTag(e.season)}</td>
-        <td colspan="9" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series — players' strike cancelled the postseason</td>
+        <td colspan="11" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series — players' strike cancelled the postseason</td>
       </tr>`;
     }
     const preRated = !!e.pre_rated;
@@ -1240,15 +1245,17 @@ function renderChampions() {
         <th class="col-champ">Champion</th>
         <th class="col-champ col-hide-mobile">Rank</th>
         <th class="col-champ">Rating</th>
-        <th class="col-champ col-hide-mobile col-od">BAT</th>
-        <th class="col-champ col-hide-mobile col-od">PIT</th>
+        <th class="col-champ col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
+        <th class="col-champ col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
+        <th class="col-champ col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Rank 1 = most hitter-friendly park.">PARK</th>
         <th class="col-champ col-hide-mobile">W-L</th>
         <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
         <th class="col-ru">Runner-Up</th>
         <th class="col-ru col-hide-mobile">Rank</th>
         <th class="col-ru">Rating</th>
-        <th class="col-ru col-hide-mobile col-od">BAT</th>
-        <th class="col-ru col-hide-mobile col-od">PIT</th>
+        <th class="col-ru col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
+        <th class="col-ru col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
+        <th class="col-ru col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Rank 1 = most hitter-friendly park.">PARK</th>
         <th class="col-ru col-hide-mobile">W-L</th>
       </tr></thead>
       <tbody>${rows}</tbody>

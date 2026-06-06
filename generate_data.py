@@ -227,15 +227,19 @@ def clean(val):
 
 
 def _od_fields(r):
-    """Return rating_o/rating_d/rank_o/rank_d safely from a row. Returns
-    None for missing values so downstream consumers render '-' rather
-    than '0'. MLB labels these BAT and PIT in the UI but the underlying
-    keys stay rating_o/rating_d for fleet-wide UI helper compatibility."""
+    """Return rating_o / rating_d / rank_o / rank_d + park_factor /
+    park_factor_rank safely from a row. Returns None for missing values so
+    downstream consumers render '-' rather than '0'. MLB labels these BAT
+    and PIT in the UI but the underlying keys stay rating_o / rating_d for
+    fleet-wide UI helper compatibility. park_factor is in raw run units
+    (positive = hitter's park, negative = pitcher's park)."""
     return {
-        'rating_o': round(float(r['rating_o']), 3) if 'rating_o' in r and not pd.isna(r['rating_o']) else None,
-        'rating_d': round(float(r['rating_d']), 3) if 'rating_d' in r and not pd.isna(r['rating_d']) else None,
-        'rank_o':   int(r['rank_o']) if 'rank_o' in r and not pd.isna(r['rank_o']) else None,
-        'rank_d':   int(r['rank_d']) if 'rank_d' in r and not pd.isna(r['rank_d']) else None,
+        'rating_o':         round(float(r['rating_o']), 3) if 'rating_o' in r and not pd.isna(r['rating_o']) else None,
+        'rating_d':         round(float(r['rating_d']), 3) if 'rating_d' in r and not pd.isna(r['rating_d']) else None,
+        'rank_o':           int(r['rank_o']) if 'rank_o' in r and not pd.isna(r['rank_o']) else None,
+        'rank_d':           int(r['rank_d']) if 'rank_d' in r and not pd.isna(r['rank_d']) else None,
+        'park_factor':      round(float(r['park_factor']), 3) if 'park_factor' in r and not pd.isna(r['park_factor']) else None,
+        'park_factor_rank': int(r['park_factor_rank']) if 'park_factor_rank' in r and not pd.isna(r['park_factor_rank']) else None,
     }
 
 
