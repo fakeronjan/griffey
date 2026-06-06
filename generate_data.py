@@ -748,7 +748,7 @@ with open("docs/data/current_standings.json", "w") as f:
 print("Writing per-season JSON files...")
 
 # Teams that actually played at least one game in each season. Filters out
-# ghost snapshots — e.g., "Oakland Athletics" still has a rolling-window
+# ghost snapshots - e.g., "Oakland Athletics" still has a rolling-window
 # rating in early 2025 from their 2024 games, but they didn't exist as a
 # franchise in 2025.
 teams_played_by_season = {}
@@ -923,7 +923,7 @@ for s in sorted(ws_results.keys(), reverse=True):
         },
     })
 
-# Insert a synthetic 1994 entry — players' strike on Aug 12 cancelled the
+# Insert a synthetic 1994 entry - players' strike on Aug 12 cancelled the
 # postseason and no World Series was played. ws_results omits 1994 since the
 # WS-walker can't find a champion, so the season would otherwise vanish from
 # the Champions tab. Flag it as `no_series` so the UI can render a callout.
@@ -981,7 +981,7 @@ _champ_count = dict(PRE_1961_CHAMPIONSHIPS)
 _ru_count    = dict(PRE_1961_RUNNER_UPS)
 for entry in reversed(champs_list):  # champs_list is newest-first; walk oldest-first
     if entry.get("no_series"):
-        continue  # 1994 strike — no champion/runner-up to count
+        continue  # 1994 strike - no champion/runner-up to count
     ct = entry["champion"]["team"]
     rt = entry["runner_up"]["team"]
     _champ_count[ct] = _champ_count.get(ct, 0) + 1
@@ -1003,7 +1003,7 @@ print("Writing GOAT lists (RS + PS)...")
 GOAT_TOP_N = 50
 ws_seasons = set(ws_results.keys())
 
-# Short / disrupted seasons — flagged on GOAT/Champions/Standings/TeamSummary
+# Short / disrupted seasons - flagged on GOAT/Champions/Standings/TeamSummary
 # rows so the UI can tag them inline + footnote. Categories drive colour
 # (labor = amber, covid = yellow, cancelled = red).
 SHORT_SEASONS = {

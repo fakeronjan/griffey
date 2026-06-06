@@ -278,7 +278,7 @@
   /* Champions / GOAT layout */
   .col-champ  { background: #fffdf3; }
   .col-ru     { background: #fafafa; }
-  /* Lists sub-view highlights — sort-key column gets a yellow tint so the
+  /* Lists sub-view highlights - sort-key column gets a yellow tint so the
      viewer's eye lands on the metric being ranked. row-group-end draws
      the divider line between repeat-champ runs / rematch groups. */
   .sort-col              { background: #fff8d0 !important; }
@@ -429,7 +429,7 @@
 <header>
   <h1>GRIFFEY ⚾</h1>
   <p class="subtitle">MLB Power Rankings · Beta</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). Park Factor estimates how much the home ballpark inflates or suppresses runs, independent of team skill — Coors Field's thin air sits at the top, marine-layer parks at the bottom. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). Park Factor estimates how much the home ballpark inflates or suppresses runs, independent of team skill - Coors Field's thin air sits at the top, marine-layer parks at the bottom. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
   <p class="updated"><span class="cadence-inline">🔄 Updated daily</span> <span class="cadence-sep">|</span> <span id="last-updated">Loading...</span> <span class="cadence-sep">|</span> <span id="last-refreshed">Loading...</span></p>
 </header>
 
@@ -538,7 +538,7 @@ let goatDataPSD       = null;
 let goatMetric        = 'rating';  // 'rating' (overall), 'o' (BAT only), 'd' (PIT only)
 let goatDataRS        = null;
 let goatDataPS        = null;
-let goatMode          = 'ps';  // 'ps' (end of playoffs — championship contenders) or 'rs' (end of regular season)
+let goatMode          = 'ps';  // 'ps' (end of playoffs - championship contenders) or 'rs' (end of regular season)
 let teamsIndex        = null;
 let teamCache         = {};
 let nameToSlug        = {};  // canonical + historical name -> slug, built from teamsIndex
@@ -901,7 +901,7 @@ function renderStandings() {
         <th>W-L (Pct)</th><th>Rating</th>
         <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
-        <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Independent of team skill — rank 1 = most hitter-friendly park.">PARK</th>
+        <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Independent of team skill - rank 1 = most hitter-friendly park.">PARK</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
       </tr></thead>
@@ -1072,7 +1072,7 @@ function renderTeamTable() {
         <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
         <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
-        <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Independent of team skill — rank 1 = most hitter-friendly park.">PARK</th>
+        <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game. Independent of team skill - rank 1 = most hitter-friendly park.">PARK</th>
         <th class="col-hide-mobile">League</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
@@ -1214,10 +1214,10 @@ function renderChampions() {
   updateDisruptedNote('champions-disrupted-note', (entries || championsData || []).map(e => e.season));
   const rows = entries.map(e => {
     if (e.no_series) {
-      // 1994 strike — single-cell row across the table with a callout.
+      // 1994 strike - single-cell row across the table with a callout.
       return `<tr style="background:#fdf3f3">
         <td class="season-cell linked" data-season-link="${e.season}">${e.season}${seasonTag(e.season)}</td>
-        <td colspan="11" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series — players' strike cancelled the postseason</td>
+        <td colspan="11" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series - players' strike cancelled the postseason</td>
       </tr>`;
     }
     const preRated = !!e.pre_rated;
@@ -1303,14 +1303,14 @@ function pitView(team) {
 
 function fmtSigned(n) { return (n >= 0 ? '+' : '') + n.toFixed(2); }
 
-// Flip "4-3" to "3-4" — used when the loser is the focal team (left slot)
+// Flip "4-3" to "3-4" - used when the loser is the focal team (left slot)
 // so the series score reads from their POV.
 function flipSeries(s) {
   const m = s && s.match(/^(\d+)-(\d+)$/);
   return m ? `${m[2]}-${m[1]}` : s;
 }
 
-// Lists-specific team block — adds the optional sort-col highlight on the
+// Lists-specific team block - adds the optional sort-col highlight on the
 // Rating cell for team-quality rankings.
 function rankTeamBlock(t, bg, season, sortRating) {
   if (!t) return `<td class="${bg}" colspan="4">-</td>`;
@@ -1367,7 +1367,7 @@ function renderRankings(rankType) {
     else if (isPit)  { c = pitView(e.champion);   r = pitView(e.runner_up); }
     else             { c = eosView(e.champion);   r = eosView(e.runner_up); }
     // Matchup quality = max(Rating) + 2 * min(Rating). The 2x weight on the
-    // weaker team penalises lopsided matchups — a "great matchup" needs both
+    // weaker team penalises lopsided matchups - a "great matchup" needs both
     // teams to be strong, not just one elite team padding the combined.
     const hi = Math.max(c.rating, r.rating);
     const lo = Math.min(c.rating, r.rating);
@@ -1561,7 +1561,7 @@ function pairRow(e, isPairEnd) {
 function renderRepeatChamps() {
   // Detect runs of consecutive seasons with the SAME champion. A run of
   // length N renders as a single N-row block. Single-season wins are
-  // skipped — only runs of length 2+ show up here.
+  // skipped - only runs of length 2+ show up here.
   const entries = [...(championsData['MLB'] || [])].sort((a, b) => a.season - b.season);
   const runs = [];
   let current = [];
@@ -1612,11 +1612,11 @@ function renderRepeatChamps() {
 function renderRematches() {
   // Group all World Series between the SAME two teams into a single N-row
   // block. A group's window extends as long as those two teams keep meeting
-  // — once 5 calendar years pass without them facing each other again,
+  // - once 5 calendar years pass without them facing each other again,
   // the window closes. Yankees-Dodgers '77/'78/'81 stays a single 3-row
   // block (3-yr gap between '78 and '81).
   //
-  // Rated WS only (1962+) — pre-rated WS would lack rating cells.
+  // Rated WS only (1962+) - pre-rated WS would lack rating cells.
   const REMATCH_GAP_THRESHOLD = 5;
   const entries = (championsData['MLB'] || []).filter(e =>
     e.champion && e.runner_up &&

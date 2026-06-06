@@ -468,10 +468,10 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
     pick up Coors inflation that should be attributed to the park.
 
     Parameter layout: [BAT_1..n, PIT_1..n, PARK_1..n]. Constraints:
-      • Per (component, league) zero-sum on BAT (existing — AL and NL
+      • Per (component, league) zero-sum on BAT (existing - AL and NL
         each centered at zero within each connected component).
       • Per (component, league) zero-sum on PIT (existing).
-      • Single GLOBAL zero-sum on PARK — an "average park" has factor 0,
+      • Single GLOBAL zero-sum on PARK - an "average park" has factor 0,
         positive PARK = hitter's park (Coors / Yankee Stadium), negative
         PARK = pitcher's park (Petco / Marlins Park). Park environment is
         a physical property, not a league construct, so the constraint is
@@ -482,7 +482,7 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
     it cancels). After the downstream calibration delta, BAT + PIT still
     equals Rating exactly; PARK is reported separately.
 
-    Where mu = league mean runs / team / game across the window — auto-
+    Where mu = league mean runs / team / game across the window - auto-
     computed from the data so MLB's ~4.5 runs/team/game scale is handled
     natively (vs DUNCAN's ~113 points/team/game).
 
@@ -579,7 +579,7 @@ def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap, sea
     """
     Solve for team fakeronjan WLS ratings on a single rolling window.
 
-    Zero-sum constraint is applied PER (connected component, league) — so AL and NL
+    Zero-sum constraint is applied PER (connected component, league) - so AL and NL
     are independently centered at zero within each component. This prevents the small
     sample of inter-league games (6 WS games pre-1997, ~250 interleague + WS post-1997)
     from sloshing the cross-league baseline around. WS / interleague games still
@@ -627,7 +627,7 @@ def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap, sea
     else:
         raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
 
-    # One zero-sum row per (component, league) — AL and NL each centered at zero.
+    # One zero-sum row per (component, league) - AL and NL each centered at zero.
     for k, key in enumerate(anchor_keys):
         row = n_games + k
         for t in anchor_groups[key]:
@@ -762,7 +762,7 @@ def compute_ratings(master_df, existing_ratings_df):
         # (BAT - PIT) is preserved; only the absolute level is anchored
         # to the main rating. Main solver's MARGIN_CAP carries through.
         # park_factor is independent of BAT/PIT and isn't touched by the
-        # calibration — it stays in raw run units (negative = pitcher's
+        # calibration - it stays in raw run units (negative = pitcher's
         # park, positive = hitter's park).
         delta = (ranked["rating"] - ranked["rating_o"] - ranked["rating_d"]) / 2.0
         ranked["rating_o"] = ranked["rating_o"] + delta

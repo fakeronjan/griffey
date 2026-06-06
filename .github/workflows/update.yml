@@ -2,7 +2,7 @@ name: Update GRIFFEY Ratings
 
 on:
   schedule:
-    - cron: '53 16 * * *'   # 16:53 UTC daily — after COBI (16:33); MLB Stats API + Retrosheet (separate sources from sports-reference)
+    - cron: '53 16 * * *'   # 16:53 UTC daily - after COBI (16:33); MLB Stats API + Retrosheet (separate sources from sports-reference)
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 permissions:
