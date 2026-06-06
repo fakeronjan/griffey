@@ -512,7 +512,7 @@ snap_records["ps_record"] = snap_records.apply(
     axis=1,
 )
 snap_records["last_match"] = snap_records.apply(
-    lambda r: era_aware_last_match(r["result"] or "", int(r["season"])),
+    lambda r: era_aware_last_match(r["result"] if isinstance(r["result"], str) else "", int(r["season"])),
     axis=1,
 )
 snap_records["last_match_date"] = snap_records["actual_game_date"].dt.strftime("%Y-%m-%d").fillna("")
