@@ -449,7 +449,7 @@
     <span class="count-label" id="standings-count"></span>
   </div>
   <p class="data-note" id="warmup-note" style="display:none">
-    Note: ratings need a 202 game-day warm-up window. The 1961 season is consumed entirely by warm-up; the first ranked snapshot is May 6, 1962, so the 1962 season starts ~one month into the schedule.
+    Note: ratings need a 202 game-day warm-up window. The 1961 season is consumed entirely by warm-up; the first rating is May 6, 1962, so the 1962 season starts ~one month into the schedule.
   </p>
   <div class="disrupted-note" id="standings-disrupted-note" style="display:none"></div>
   <div id="standings-table-wrap"><p class="loading">Loading standings...</p></div>
@@ -515,7 +515,7 @@
 
 <!-- GOAT TABLE -->
 <div id="goat" class="tab">
-  <p class="data-note">Top 50 single-season ratings · Pick the snapshot (end of regular season vs. end of playoffs), then the metric (overall Rating, batting only, or pitching only).</p>
+  <p class="data-note">Top 50 single-season ratings · Pick the timeframe (end of regular season vs. end of playoffs), then the metric (overall Rating, batting only, or pitching only).</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-metric-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
@@ -912,7 +912,7 @@ function renderStandings() {
         <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
         <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game, independent of team skill. Rank 1 = most hitter-friendly park.">PARK</th>
-        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Rating, Batting, Pitching, season progress, current playoff series state if applicable) at this snapshot. Trained on every other season's snapshots since 1969. League-wide probabilities sum to 100%.">TITLE ODDS</th>
+        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Rating, Batting, Pitching, season progress, current playoff series state if applicable) through this point in the season. Trained on the same point in every other season since 1969. League-wide probabilities sum to 100%.">TITLE ODDS</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
       </tr></thead>
@@ -1085,7 +1085,7 @@ function renderTeamTable() {
         <th class="col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
         <th class="col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game, independent of team skill. Rank 1 = most hitter-friendly park.">PARK</th>
-        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Rating, Batting, Pitching, season progress, current playoff series state if applicable) at this snapshot. Trained on every other season's snapshots since 1969. League-wide probabilities sum to 100%.">TITLE ODDS</th>
+        <th class="col-hide-mobile col-od" title="Probability of winning the World Series, given (Rating, Batting, Pitching, season progress, current playoff series state if applicable) through this point in the season. Trained on the same point in every other season since 1969. League-wide probabilities sum to 100%.">TITLE ODDS</th>
         <th class="col-hide-mobile">League</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
