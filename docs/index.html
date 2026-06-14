@@ -1231,7 +1231,7 @@ function renderChampions() {
   }
 
   function teamCell(t, bg, season) {
-    if (!t) return `<td class="${bg}" colspan="4">-</td>`;
+    if (!t) return `<td class="${bg}" colspan="6">-</td>`;
     const label = t.display_name || t.team;
     const slug = nameToSlug[t.team] || nameToSlug[label];
     const rating = t.ps_end_rating != null ? t.ps_end_rating.toFixed(2) : '-';
@@ -1250,7 +1250,6 @@ function renderChampions() {
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
       <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_rating_o, t.ps_end_rank_o)}</td>
       <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_rating_d, t.ps_end_rank_d)}</td>
-      <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.ps_end_park_factor, t.ps_end_park_factor_rank)}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.rs_record, t.ps_record)}</td>`;
   }
 
@@ -1261,7 +1260,7 @@ function renderChampions() {
       // 1994 strike - single-cell row across the table with a callout.
       return `<tr style="background:#fdf3f3">
         <td class="season-cell linked" data-season-link="${e.season}">${e.season}${seasonTag(e.season)}</td>
-        <td colspan="11" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series - players' strike cancelled the postseason</td>
+        <td colspan="13" style="text-align:center;color:#c62828;font-size:12px;font-style:italic">No World Series - players' strike cancelled the postseason</td>
       </tr>`;
     }
     const preRated = !!e.pre_rated;
@@ -1291,7 +1290,6 @@ function renderChampions() {
         <th class="col-champ">Rating</th>
         <th class="col-champ col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-champ col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
-        <th class="col-champ col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game, independent of team skill. Rank 1 = most hitter-friendly park.">PARK</th>
         <th class="col-champ col-hide-mobile">W-L</th>
         <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
         <th class="col-ru">Runner-Up</th>
@@ -1299,7 +1297,6 @@ function renderChampions() {
         <th class="col-ru">Rating</th>
         <th class="col-ru col-hide-mobile col-od" title="Batting: how much the team's offense contributes to its Rating, in runs above league average per game.">BAT</th>
         <th class="col-ru col-hide-mobile col-od" title="Pitching: how much the team's run prevention contributes to its Rating, in runs above league average per game.">PIT</th>
-        <th class="col-ru col-hide-mobile col-od" title="Park factor: how much the team's home ballpark inflates (positive) or suppresses (negative) total runs scored, in runs per game, independent of team skill. Rank 1 = most hitter-friendly park.">PARK</th>
         <th class="col-ru col-hide-mobile">W-L</th>
       </tr></thead>
       <tbody>${rows}</tbody>
