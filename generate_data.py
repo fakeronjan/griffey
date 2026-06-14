@@ -1437,13 +1437,18 @@ def build_goat(flag_col, require_ws=False, sort_col="rating"):
     # LOBO = WNBA Finals teams). Also filters out the post-merge PS-end inflation
     # problem for non-WS teams.
     if require_ws:
-        ws_teams = {(s, info["champion"]) for s, info in ws_results.items()} | \
-                   {(s, info["runner_up"]) for s, info in ws_results.items()}
+        # Champions only - the PS GOAT is a greatest-CHAMPIONS list; dominant
+        # non-winning seasons live on the RS GOAT. Length rounds down to the
+        # nearest 10 (capped at GOAT_TOP_N) so it grows cleanly as titles accrue.
+        ws_teams = {(s, info["champion"]) for s, info in ws_results.items()}
         rows = rows[rows.apply(lambda r: (int(r["season"]), r["name"]) in ws_teams, axis=1)]
+        n = min(GOAT_TOP_N, (rows["season"].nunique() // 10) * 10)
+    else:
+        n = GOAT_TOP_N
 
     rows = rows[rows[sort_col].notna()]
     rows = rows.sort_values(sort_col, ascending=False).reset_index(drop=True)
-    top = rows.head(GOAT_TOP_N)
+    top = rows.head(n)
     out = []
     for i, r in top.iterrows():
         s = int(r["season"])

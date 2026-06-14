@@ -517,7 +517,7 @@
 
 <!-- GOAT TABLE -->
 <div id="goat" class="tab">
-  <p class="data-note">Top 50 single-season ratings · Pick the timeframe (end of regular season vs. end of playoffs), then the metric (overall Rating, batting only, or pitching only).</p>
+  <p class="data-note" id="goat-note">Top 50 single-season ratings · end of playoffs, champions only</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-metric-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
@@ -1776,6 +1776,8 @@ function renderGoat() {
   ];
   const data = pick.data;
   if (!data) return;
+  const _gn = document.getElementById('goat-note');
+  if (_gn) _gn.textContent = `Top ${data.length} single-season ratings · ` + (goatMode === 'rs' ? 'end of regular season, all teams' : 'end of playoffs, champions only');
   const teams = goatConf === 'all'
     ? data
     : data.filter(t => t.league === goatConf);
