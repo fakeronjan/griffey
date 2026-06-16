@@ -45,6 +45,17 @@
     color: rgba(255,255,255,0.6);
     margin-top: 6px;
   }
+  header p.data-credit {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 6px;
+    max-width: 960px;
+    line-height: 1.5;
+  }
+  header p.data-credit a {
+    color: rgba(255,255,255,0.82);
+    text-decoration: underline;
+  }
 
   nav {
     background: #155a75;
@@ -433,6 +444,7 @@
   <p class="subtitle">MLB Power Rankings</p>
   <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate run-margin vs avg team. Batting and Pitching break Rating into how much each side contributes (they sum to Rating). Park Factor estimates how much the home ballpark inflates or suppresses runs, independent of team skill - Coors Field's thin air sits at the top, marine-layer parks at the bottom. ~+0.5 = contender; ~+1.0 = elite; ~+1.5+ = generational (1998 New York Yankees = 1.70).</p>
   <p class="updated"><span class="cadence-inline">🔄 Updated daily</span> <span class="cadence-sep">|</span> <span id="last-updated">Loading...</span> <span class="cadence-sep">|</span> <span id="last-refreshed">Loading...</span></p>
+  <p class="data-credit">Data: historical results courtesy of <a href="https://www.retrosheet.org" target="_blank" rel="noopener">Retrosheet</a>; current-season results from the MLB Stats API (&copy; MLB Advanced Media). Ratings are derived from this data. The information used here was obtained free of charge from and is copyrighted by Retrosheet. Interested parties may contact Retrosheet at <a href="https://www.retrosheet.org" target="_blank" rel="noopener">www.retrosheet.org</a>.</p>
 </header>
 
 <nav>
