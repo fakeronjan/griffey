@@ -990,6 +990,108 @@ if not _in_progress.empty and not _to_train_df.empty:
     for _, r in cur.iterrows():
         _title_odds_cache[(int(r['ranking_id']), r['team'])] = float(r['p_norm'])
 
+# ---------------------------------------------------------------------------
+# Playoff-phase calibration (2026-06-18). The LOO logistic is fit on ~99%
+# regular-season rows, so it over-applies regular-season rating signal in the
+# playoffs, where MLB is close to a crapshoot -> rating-driven favorites were
+# overstated (validated: shipped ~85% historically won ~65%; diagnosis +
+# check in sports-ratings/title_odds_calibration.py). Fix: shrink each playoff
+# team's odds toward its COIN-FLIP BRACKET baseline (pure series math), NOT
+# toward uniform, so series-driven certainty is preserved (a team up 3-0 in the
+# WS stays ~94%) while only the rating-driven excess is tempered. Per snapshot:
+#     q_i  proportional to  p_i**w * cf_i**(1-w)   (renormalized; w fit on history)
+# where cf_i = P(win current series | state, coin-flip BO7) * 0.5**(future rounds).
+# Regular season untouched; within-snapshot ranking preserved (monotonic).
+# ---------------------------------------------------------------------------
+_BO7_P_TO = {}
+def _bo7_to(w, l):
+    if (w, l) in _BO7_P_TO: return _BO7_P_TO[(w, l)]
+    if w >= 4: _BO7_P_TO[(w, l)] = 1.0; return 1.0
+    if l >= 4: _BO7_P_TO[(w, l)] = 0.0; return 0.0
+    v = 0.5 * _bo7_to(w + 1, l) + 0.5 * _bo7_to(w, l + 1)
+    _BO7_P_TO[(w, l)] = v; return v
+for _w in range(5):
+    for _l in range(5):
+        _bo7_to(_w, _l)
+
+
+def _coinflip_title_p_to(season, progress, w_pad, l_pad):
+    """Pure coin-flip bracket title probability: win the current series (BO7 from
+    the padded state) times 0.5 per future round."""
+    if progress >= PHASE_CHAMPION_TO:
+        return 1.0
+    tr = _to_total_rounds(season)
+    p_series = _bo7_to(min(int(w_pad), 4), min(int(l_pad), 4))
+    if tr <= 1:
+        future = 0
+    else:
+        frac = (progress - PHASE_POST_RS_TO) / (PHASE_FINALS_ENTRY_TO - PHASE_POST_RS_TO)
+        depth = 1 + int(round(max(0.0, frac) * (tr - 1)))
+        future = max(0, tr - depth)
+    return p_series * (0.5 ** future)
+
+
+# Coin-flip baseline + playoff-snapshot grouping (playoff rows only).
+_pf_rows_to = _to_train_df[_to_train_df['progress'] > PHASE_RS_MAX_TO]
+_rid_season_to = {}
+_row_cf_to = {}
+_playoff_rids_to = set()
+for _r in _pf_rows_to.itertuples(index=False):
+    _rid = int(_r.ranking_id)
+    _playoff_rids_to.add(_rid)
+    _rid_season_to[_rid] = int(_r.season)
+    _row_cf_to[(_rid, _r.team)] = _coinflip_title_p_to(
+        int(_r.season), float(_r.progress), _r.series_w, _r.series_l)
+
+_snap_to = {}
+for (_rid, _team), _p in _title_odds_cache.items():
+    if _rid in _playoff_rids_to:
+        _cf = _row_cf_to.get((_rid, _team))
+        if _cf is None:
+            continue
+        _snap_to.setdefault(_rid, []).append((_team, _p, _cf))
+
+
+def _blend_to(trips, w):
+    vals = [(t, (p ** w) * (cf ** (1 - w))) for t, p, cf in trips]
+    s = sum(v for _, v in vals)
+    if s <= 0:
+        return {t: p for t, p, _ in trips}
+    return {t: v / s for t, v in vals}
+
+
+_fit_snaps_to = [(rid, trips) for rid, trips in _snap_to.items()
+                 if _rid_season_to[rid] in _completed_seasons]
+
+
+def _blend_logloss_to(w):
+    eps = 1e-9
+    tot = 0.0
+    n = 0
+    for rid, trips in _fit_snaps_to:
+        champ = _to_champion.get(_rid_season_to[rid])
+        q = _blend_to(trips, w)
+        for t, _, _ in trips:
+            qi = min(max(q[t], eps), 1 - eps)
+            y = 1.0 if t == champ else 0.0
+            tot += -(y * np.log(qi) + (1 - y) * np.log(1 - qi))
+            n += 1
+    return tot / n if n else float("inf")
+
+
+TITLE_ODDS_PLAYOFF_W = 1.0
+if _fit_snaps_to:
+    _ws_grid = np.linspace(0.0, 1.0, 51)
+    TITLE_ODDS_PLAYOFF_W = float(min(_ws_grid, key=_blend_logloss_to))
+    print(f"  Playoff calibration: blend w={TITLE_ODDS_PLAYOFF_W:.2f} toward coin-flip bracket "
+          f"(playoff logloss {_blend_logloss_to(1.0):.4f} -> {_blend_logloss_to(TITLE_ODDS_PLAYOFF_W):.4f})")
+
+if TITLE_ODDS_PLAYOFF_W < 0.999:
+    for _rid, _trips in _snap_to.items():
+        _q = _blend_to(_trips, TITLE_ODDS_PLAYOFF_W)
+        for _t, _, _ in _trips:
+            _title_odds_cache[(_rid, _t)] = float(_q[_t])
+
 # Per-snapshot rank (1 = highest odds). Reuse the cache initialized earlier.
 _pairs_by_rid = {}
 for (rid, team), odds in _title_odds_cache.items():
