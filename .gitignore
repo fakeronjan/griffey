@@ -5,3 +5,4 @@ venv/
 
 # Engine-migration backup snapshots (never commit)
 *-bak
+griffey_ratings.csv.gz

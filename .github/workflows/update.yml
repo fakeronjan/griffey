@@ -26,8 +26,25 @@ jobs:
           pip install cython numpy
           pip install --no-build-isolation -r requirements.txt
 
+      # Ratings cache lives in the Actions cache, NOT git (regenerable build
+      # artifact - griffey.py's incremental scratchpad - and re-committing a
+      # ~14MB gzip daily bloated the repo). Rolling key + prefix restore-keys; a
+      # miss (first run / eviction) is safe: griffey.py rebuilds from scratch.
+      - name: Restore ratings cache
+        uses: actions/cache/restore@v4
+        with:
+          path: griffey_ratings.csv.gz
+          key: griffey-ratings-${{ github.run_id }}
+          restore-keys: griffey-ratings-
+
       - name: Run ratings engine
         run: python griffey.py
+
+      - name: Save ratings cache
+        uses: actions/cache/save@v4
+        with:
+          path: griffey_ratings.csv.gz
+          key: griffey-ratings-${{ github.run_id }}
 
       - name: Generate web data
         run: python generate_data.py
@@ -36,7 +53,7 @@ jobs:
         run: |
           git config user.name  "GRIFFEY Bot"
           git config user.email "griffey-bot@users.noreply.github.com"
-          git add loaded_mlb_games.csv all_mlb_games.csv griffey_ratings.csv.gz docs/data/
+          git add loaded_mlb_games.csv all_mlb_games.csv docs/data/
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
