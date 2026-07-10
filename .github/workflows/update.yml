@@ -30,12 +30,15 @@ jobs:
       # artifact - griffey.py's incremental scratchpad - and re-committing a
       # ~14MB gzip daily bloated the repo). Rolling key + prefix restore-keys; a
       # miss (first run / eviction) is safe: griffey.py rebuilds from scratch.
+      # The prefix is version-tagged (w155): bump it whenever the rating window
+      # or any engine change requires invalidating history, forcing a full
+      # rebuild instead of an incremental tail patch on stale-window ratings.
       - name: Restore ratings cache
         uses: actions/cache/restore@v4
         with:
           path: griffey_ratings.csv.gz
-          key: griffey-ratings-${{ github.run_id }}
-          restore-keys: griffey-ratings-
+          key: griffey-ratings-w155-${{ github.run_id }}
+          restore-keys: griffey-ratings-w155-
 
       - name: Run ratings engine
         run: python griffey.py
@@ -44,7 +47,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: griffey_ratings.csv.gz
-          key: griffey-ratings-${{ github.run_id }}
+          key: griffey-ratings-w155-${{ github.run_id }}
 
       - name: Generate web data
         run: python generate_data.py

@@ -30,11 +30,6 @@ import pandas as pd
 
 MIN_SEASON = 1961             # Expansion era anchor (162-game season + AL/NL post-expansion)
 
-# Season-aware rolling window: window (game-days) = WINDOW_MULTIPLIER * games-per-team-per-season.
-# At 0.75, a 162-game MLB season gets a 121-day window (~67% of season). Shortened seasons
-# (lockouts, COVID) get proportionally smaller windows automatically.
-WINDOW_MULTIPLIER = 1.25
-
 HOME_COURT_ADJUSTMENT = 0.1   # raw-run home advantage (modern-era empirical: ~0.09-0.13 runs)
 
 # Margin transform: cap at 10 runs. Captures ~98% of MLB games uncapped - only the most
@@ -646,20 +641,21 @@ def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap, sea
 
 
 def _window_for_season(season):
-    """Fixed 139-game-day rolling window across all seasons.
+    """Fixed 155-game-day rolling window across all seasons.
 
-    Why 139: ~75% of MLB's calendar regular season (~185 game-days). This
-    matches DUNCAN's calibration ratio (123 game-days = 75% of NBA's ~165
-    game-day RS), which is the fleet's best-calibrated model. The previous
-    202-game-day window covered ~100% of RS + ~17 game-days of prior PS,
-    which created an asymmetric carryover for teams that recently made
-    playoffs. 139 stays entirely within the current season at RS-end.
+    Why 155: ~75% of MLB's calendar regular season (~206 game-days in recent
+    full years). This matches DUNCAN's calibration ratio (123 game-days = 75%
+    of NBA's ~165 game-day RS), the fleet's best-calibrated model. Staying
+    at ~75% keeps the window essentially within the current season at RS-end,
+    so ratings track live form instead of blending in the prior year. A wider
+    window (the previous 250 = ~120% of a season) pulled in ~half the prior
+    season mid-year, making ratings sluggish and diluting single-season peaks.
 
     Why fixed not variable: short seasons (1981 strike, 1994 strike, 1995
     catch-up, 2020 COVID) used to get a proportionally shrunk window, which
     inflated tiny-sample ratings for whoever ran hot in those years.
     """
-    return 250
+    return 155
 
 
 _MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
@@ -671,8 +667,8 @@ _MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
 
 def compute_ratings(master_df, existing_ratings_df):
     """
-    Compute per-game-day fakeronjan WLS power ratings using a season-aware rolling window
-    (WINDOW_MULTIPLIER × games-per-team-this-season). Skips dates already present in
+    Compute per-game-day fakeronjan WLS power ratings using a fixed rolling window
+    (155 game-days, ~75% of an MLB season; see _window_for_season). Skips dates already present in
     existing_ratings_df. Re-processes the most recent RECOMPUTE_TAIL_DAYS ranking_ids
     each run to absorb late-arriving data.
     """
