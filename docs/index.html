@@ -197,6 +197,7 @@
   .linked { cursor: pointer; }
   .linked:hover { text-decoration: underline; }
   .team-cell.linked, .team-link.linked { color: #1a6b8a; }
+  .team-link { font-weight: 700; }
 
   .rating-cell {
     font-weight: 700;
@@ -904,9 +905,24 @@ function renderLastMatch(raw, season, isStale) {
   if (dh) {
     const [, games, venue, opponent] = dh;
     const slug = nameToSlug[opponent.trim()];
+    // Sitting outside any single game's result span, so give it its own bold
+    // treatment here rather than relying on inheriting from a colored ancestor
+    // (that's how the single-game path gets its bold opponent name).
     const oppHtml = slug
       ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
-      : opponent;
+      : `<span class="team-link">${opponent}</span>`;
+    const legLetters = [...games.matchAll(/G\d+:\s*([WLT])/g)].map(mm => mm[1]);
+    const sameOutcome = legLetters.length > 0 && legLetters.every(l => l === legLetters[0]);
+    if (sameOutcome) {
+      // All legs went the same way (e.g. swept the DH) -- match the single-game
+      // look exactly: whole line (scores, "vs.", opponent) in one W/L color.
+      const cls = isStale
+        ? (legLetters[0] === 'W' ? 'result-W-stale' : legLetters[0] === 'L' ? 'result-L-stale' : '')
+        : (legLetters[0] === 'W' ? 'result-W' : legLetters[0] === 'L' ? 'result-L' : '');
+      return `<span class="${cls}">${games} ${venue}</span> ${oppHtml}`;
+    }
+    // Split doubleheader (one win, one loss) -- no single color honestly applies
+    // to "vs. Opponent", so only the individual scores get tinted.
     const gameSpans = games.split(',').map(g => renderDHLeg(g.trim(), season, isStale)).join(', ');
     return `${gameSpans} ${venue} ${oppHtml}`;
   }
