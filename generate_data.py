@@ -295,20 +295,22 @@ def era_aware_last_match(raw, season):
 
 
 def combine_doubleheader(results):
-    """Collapse a team's game(s) on a single date into one display string. A lone
-    game passes through unchanged; a doubleheader (2 games, same date_game) shows
-    both scores tagged '(DH)' -- same opponent/venue collapses to one clause,
-    a split doubleheader (rare, different opponents) falls back to joining both
-    full lines with '/'."""
+    """Collapse a team's game(s) on a single date into one display string, in true
+    game order (caller must pass `results` already sorted by Retrosheet gid game-number,
+    NOT raw file order -- doubleheader rows aren't guaranteed to arrive game-1-first).
+    A lone game passes through unchanged; a doubleheader (2 games, same date_game)
+    labels each leg 'G1'/'G2' explicitly rather than relying on position alone --
+    same opponent/venue collapses to one clause, a split doubleheader (rare,
+    different opponents) falls back to labeling both full lines."""
     results = [r for r in results if r]
     if len(results) <= 1:
         return results[0] if results else ""
     matches = [_LAST_MATCH_RE.match(r) for r in results]
     if all(matches) and len({(m.group(3), m.group(4)) for m in matches}) == 1:
-        scores = ", ".join(f"{m.group(1)} {m.group(2)}" for m in matches)
+        games = ", ".join(f"G{i+1}: {m.group(1)} {m.group(2)}" for i, m in enumerate(matches))
         venue, opponent = matches[0].group(3), matches[0].group(4)
-        return f"{scores} {venue} {opponent} (DH)"
-    return " / ".join(results)
+        return f"{games} {venue} {opponent}"
+    return " / ".join(f"G{i+1}: {r}" for i, r in enumerate(results))
 
 
 # =========================================================
@@ -448,9 +450,9 @@ print("\nComputing per-team season records...")
 def team_game_view(games_df):
     """One row per team per game, with W/L flag + result string from that team's
     perspective. Used both for end-of-season totals and per-snapshot rolling records."""
-    home = games_df[["season", "date_game", "home_team_name", "home_win", "is_tie", "home_result", "is_playoff_game_flag"]].rename(
+    home = games_df[["gid", "season", "date_game", "home_team_name", "home_win", "is_tie", "home_result", "is_playoff_game_flag"]].rename(
         columns={"home_team_name": "team", "home_win": "won", "home_result": "result"})
-    away = games_df[["season", "date_game", "visitor_team_name", "visitor_win", "is_tie", "visitor_result", "is_playoff_game_flag"]].rename(
+    away = games_df[["gid", "season", "date_game", "visitor_team_name", "visitor_win", "is_tie", "visitor_result", "is_playoff_game_flag"]].rename(
         columns={"visitor_team_name": "team", "visitor_win": "won", "visitor_result": "result"})
     return pd.concat([home, away], ignore_index=True)
 
@@ -487,7 +489,12 @@ print(f"  {len(rec_pivot):,} (season, team) records computed.")
 # Standings tab with W-L, Last Game, Date columns (fleet convention).
 
 print("\nComputing per-snapshot rolling records + last-match lookups...")
-team_games_sorted = team_games.sort_values(["team", "season", "date_game"]).copy()
+# Retrosheet gid convention: trailing digit is the game number (0 = only game that
+# day, 1/2 = game 1/game 2 of a doubleheader). Sort on it explicitly rather than
+# trusting row order in all_mlb_games.csv -- doubleheader rows aren't guaranteed to
+# arrive in game order (e.g. BOS20260717 had game 2 ahead of game 1 in the source).
+team_games["_game_num"] = team_games["gid"].str[-1].astype(int)
+team_games_sorted = team_games.sort_values(["team", "season", "date_game", "_game_num"]).copy()
 team_games_sorted["rs_w_inc"] = (~team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 1)).astype(int)
 team_games_sorted["rs_l_inc"] = (~team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 0)).astype(int)
 team_games_sorted["ps_w_inc"] = ( team_games_sorted["is_playoff_game"] & (team_games_sorted["won"] == 1)).astype(int)
@@ -514,7 +521,7 @@ team_games_sorted["result_display"] = team_games_sorted.apply(
 )
 team_games_for_merge = (
     team_games_sorted
-    .sort_values(["team", "season", "date_game"])
+    .sort_values(["team", "season", "date_game", "_game_num"])
     .groupby(["team", "season", "date_game"], as_index=False)
     .agg(
         result=("result_display", lambda s: combine_doubleheader(list(s))),

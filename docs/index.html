@@ -888,23 +888,31 @@ function renderOneMatch(raw, season, isStale) {
   return `<span class="${cls}">${letter} ${score} ${venue} ${oppHtml}</span>`;
 }
 
+function renderDHLeg(labeledGame, season, isStale) {
+  // "G1: W 10-0" -> label stays plain text, score gets the colored/linked treatment.
+  const m = labeledGame.match(/^(G\d+):\s*(.+)$/);
+  if (!m) return renderOneMatch(labeledGame, season, isStale);
+  const [, label, rest] = m;
+  return `${label}: ${renderOneMatch(rest, season, isStale)}`;
+}
+
 function renderLastMatch(raw, season, isStale) {
   if (!raw) return '-';
-  // Doubleheader, same opponent/venue: "L 0-5, W 6-5 vs. Montreal Expos (DH)" --
-  // color + link once, but show both game scores.
-  const dh = raw.match(/^((?:[WLT]\s+\d+\s*-\s*\d+)(?:,\s*[WLT]\s+\d+\s*-\s*\d+)+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+?)\s*(\(DH\))?$/);
+  // Doubleheader, same opponent/venue: "G1: L 0-5, G2: W 6-5 vs. Montreal Expos" --
+  // explicit G1/G2 labels (not just position) so which leg is which is unambiguous.
+  const dh = raw.match(/^((?:G\d+:\s*[WLT]\s+\d+\s*-\s*\d+)(?:,\s*G\d+:\s*[WLT]\s+\d+\s*-\s*\d+)+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+)$/);
   if (dh) {
-    const [, games, venue, opponent, tag] = dh;
+    const [, games, venue, opponent] = dh;
     const slug = nameToSlug[opponent.trim()];
     const oppHtml = slug
       ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
       : opponent;
-    const gameSpans = games.split(',').map(g => renderOneMatch(g.trim(), season, isStale)).join(', ');
-    return `${gameSpans} ${venue} ${oppHtml}${tag ? ' ' + tag : ''}`;
+    const gameSpans = games.split(',').map(g => renderDHLeg(g.trim(), season, isStale)).join(', ');
+    return `${gameSpans} ${venue} ${oppHtml}`;
   }
-  // Split doubleheader (rare, different opponents): "W 5-3 vs. Team A / L 2-4 @ Team B"
+  // Split doubleheader (rare, different opponents): "G1: W 5-3 vs. Team A / G2: L 2-4 @ Team B"
   if (raw.includes(' / ')) {
-    return raw.split(' / ').map(part => renderOneMatch(part.trim(), season, isStale)).join(' / ');
+    return raw.split(' / ').map(part => renderDHLeg(part.trim(), season, isStale)).join(' / ');
   }
   return renderOneMatch(raw, season, isStale);
 }
