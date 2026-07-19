@@ -127,6 +127,20 @@
   .short-season-tag.tag-cancelled { background: #fde0e0; color: #c62828; border-color: #f5b3b3; }
   .short-season-tag.tag-labor     { background: #fef3e0; color: #b56500; border-color: #f5d6a3; }
   .short-season-tag.tag-covid     { background: #fef9c3; color: #92750e; border-color: #fde68a; }
+  /* Doubleheader game-number badge (Team Summary "Last Game" cell) */
+  .dh-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    background: #f2f2f2;
+    color: #888;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    margin-right: 3px;
+  }
   .disrupted-note {
     background: #fafafa;
     border-left: 3px solid #c8c8c8;
@@ -890,11 +904,11 @@ function renderOneMatch(raw, season, isStale) {
 }
 
 function renderDHLeg(labeledGame, season, isStale) {
-  // "G1: W 10-0" -> label stays plain text, score gets the colored/linked treatment.
+  // "G1: W 10-0" -> small "G1" badge, score gets the colored/linked treatment.
   const m = labeledGame.match(/^(G\d+):\s*(.+)$/);
   if (!m) return renderOneMatch(labeledGame, season, isStale);
   const [, label, rest] = m;
-  return `${label}: ${renderOneMatch(rest, season, isStale)}`;
+  return `<span class="dh-tag">${label}</span>${renderOneMatch(rest, season, isStale)}`;
 }
 
 function renderLastMatch(raw, season, isStale) {
@@ -915,16 +929,21 @@ function renderLastMatch(raw, season, isStale) {
     const sameOutcome = legLetters.length > 0 && legLetters.every(l => l === legLetters[0]);
     if (sameOutcome) {
       // All legs went the same way (e.g. swept the DH) -- match the single-game
-      // look exactly: whole line (scores, "vs.", opponent) in one W/L color.
+      // look exactly: whole line (badges + scores, "vs.", opponent) in one W/L
+      // color. Badges keep their own neutral color/weight regardless (see CSS).
+      const legsHtml = games.split(',').map(g => {
+        const gm = g.trim().match(/^(G\d+):\s*(.+)$/);
+        return gm ? `<span class="dh-tag">${gm[1]}</span>${gm[2]}` : g.trim();
+      }).join(' ');
       const cls = isStale
         ? (legLetters[0] === 'W' ? 'result-W-stale' : legLetters[0] === 'L' ? 'result-L-stale' : '')
         : (legLetters[0] === 'W' ? 'result-W' : legLetters[0] === 'L' ? 'result-L' : '');
-      return `<span class="${cls}">${games} ${venue}</span> ${oppHtml}`;
+      return `<span class="${cls}">${legsHtml} ${venue}</span> ${oppHtml}`;
     }
     // Split doubleheader (one win, one loss) -- no single color honestly applies
-    // to "vs. Opponent", so only the individual scores get tinted.
-    const gameSpans = games.split(',').map(g => renderDHLeg(g.trim(), season, isStale)).join(', ');
-    return `${gameSpans} ${venue} ${oppHtml}`;
+    // to "vs. Opponent", so each leg's score keeps its own W/L tint via renderDHLeg.
+    const legsHtml = games.split(',').map(g => renderDHLeg(g.trim(), season, isStale)).join(' ');
+    return `${legsHtml} ${venue} ${oppHtml}`;
   }
   // Split doubleheader (rare, different opponents): "G1: W 5-3 vs. Team A / G2: L 2-4 @ Team B"
   if (raw.includes(' / ')) {
