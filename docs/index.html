@@ -873,8 +873,7 @@ function selectSnapshot(date) {
   renderStandings();
 }
 
-function renderLastMatch(raw, season, isStale) {
-  if (!raw) return '-';
+function renderOneMatch(raw, season, isStale) {
   const cls = isStale
     ? (raw[0] === 'W' ? 'result-W-stale' : raw[0] === 'L' ? 'result-L-stale' : '')
     : (raw[0] === 'W' ? 'result-W' : raw[0] === 'L' ? 'result-L' : '');
@@ -887,6 +886,27 @@ function renderLastMatch(raw, season, isStale) {
     ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
     : opponent;
   return `<span class="${cls}">${letter} ${score} ${venue} ${oppHtml}</span>`;
+}
+
+function renderLastMatch(raw, season, isStale) {
+  if (!raw) return '-';
+  // Doubleheader, same opponent/venue: "L 0-5, W 6-5 vs. Montreal Expos (DH)" --
+  // color + link once, but show both game scores.
+  const dh = raw.match(/^((?:[WLT]\s+\d+\s*-\s*\d+)(?:,\s*[WLT]\s+\d+\s*-\s*\d+)+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+?)\s*(\(DH\))?$/);
+  if (dh) {
+    const [, games, venue, opponent, tag] = dh;
+    const slug = nameToSlug[opponent.trim()];
+    const oppHtml = slug
+      ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
+      : opponent;
+    const gameSpans = games.split(',').map(g => renderOneMatch(g.trim(), season, isStale)).join(', ');
+    return `${gameSpans} ${venue} ${oppHtml}${tag ? ' ' + tag : ''}`;
+  }
+  // Split doubleheader (rare, different opponents): "W 5-3 vs. Team A / L 2-4 @ Team B"
+  if (raw.includes(' / ')) {
+    return raw.split(' / ').map(part => renderOneMatch(part.trim(), season, isStale)).join(' / ');
+  }
+  return renderOneMatch(raw, season, isStale);
 }
 
 function renderStandings() {

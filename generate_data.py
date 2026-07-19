@@ -294,6 +294,23 @@ def era_aware_last_match(raw, season):
     return f"{letter} {score} {venue} {display_name(opponent.strip(), season)}"
 
 
+def combine_doubleheader(results):
+    """Collapse a team's game(s) on a single date into one display string. A lone
+    game passes through unchanged; a doubleheader (2 games, same date_game) shows
+    both scores tagged '(DH)' -- same opponent/venue collapses to one clause,
+    a split doubleheader (rare, different opponents) falls back to joining both
+    full lines with '/'."""
+    results = [r for r in results if r]
+    if len(results) <= 1:
+        return results[0] if results else ""
+    matches = [_LAST_MATCH_RE.match(r) for r in results]
+    if all(matches) and len({(m.group(3), m.group(4)) for m in matches}) == 1:
+        scores = ", ".join(f"{m.group(1)} {m.group(2)}" for m in matches)
+        venue, opponent = matches[0].group(3), matches[0].group(4)
+        return f"{scores} {venue} {opponent} (DH)"
+    return " / ".join(results)
+
+
 # =========================================================
 # DATA LOAD
 # =========================================================
@@ -484,12 +501,29 @@ for col in ["rs_w", "rs_l", "ps_w", "ps_l"]:
 # record as of the latest game ON OR BEFORE that date in that season.
 unique_snaps = ratings[["season", "name", "ranking_date"]].drop_duplicates().copy()
 unique_snaps = unique_snaps.rename(columns={"name": "team", "ranking_date": "date_game"})
+unique_snaps_sorted = unique_snaps.sort_values("date_game").reset_index(drop=True)
 
-# merge_asof requires both sides sorted by the `on` key globally
-unique_snaps_sorted  = unique_snaps.sort_values("date_game").reset_index(drop=True)
-team_games_for_merge = team_games_sorted[
-    ["team", "season", "date_game", "result", "cum_rs_w", "cum_rs_l", "cum_ps_w", "cum_ps_l"]
-].copy()
+# Ratings snapshot to one team-date (grouped_date_id groups a doubleheader's two games
+# into a single rating update), so collapse team_games_sorted the same way here: era-map
+# each individual game's result first, then combine same-date games into one display
+# string before the asof merge. Otherwise a doubleheader's first game silently
+# disappears from "Last Game" (only whichever row the asof-tie happened to pick survives).
+team_games_sorted["result_display"] = team_games_sorted.apply(
+    lambda r: era_aware_last_match(r["result"] if isinstance(r["result"], str) else "", int(r["season"])),
+    axis=1,
+)
+team_games_for_merge = (
+    team_games_sorted
+    .sort_values(["team", "season", "date_game"])
+    .groupby(["team", "season", "date_game"], as_index=False)
+    .agg(
+        result=("result_display", lambda s: combine_doubleheader(list(s))),
+        cum_rs_w=("cum_rs_w", "last"),
+        cum_rs_l=("cum_rs_l", "last"),
+        cum_ps_w=("cum_ps_w", "last"),
+        cum_ps_l=("cum_ps_l", "last"),
+    )
+)
 # Preserve the actual game date through merge_asof (the merge's join column 'date_game'
 # becomes the snapshot date on the output side, so without this we'd lose the team's
 # actual last-played date).
@@ -511,10 +545,7 @@ snap_records["ps_record"] = snap_records.apply(
               if (pd.notna(r["cum_ps_w"]) and (r["cum_ps_w"] + r["cum_ps_l"]) > 0) else "",
     axis=1,
 )
-snap_records["last_match"] = snap_records.apply(
-    lambda r: era_aware_last_match(r["result"] if isinstance(r["result"], str) else "", int(r["season"])),
-    axis=1,
-)
+snap_records["last_match"] = snap_records["result"].fillna("")
 snap_records["last_match_date"] = snap_records["actual_game_date"].dt.strftime("%Y-%m-%d").fillna("")
 
 # Index for fast lookup: (season, team, ranking_date) -> dict
