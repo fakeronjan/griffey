@@ -35,6 +35,13 @@ ERA_PARAMS = [
     (2010, 0.1801, 0.504),
     (2021, 0.1829, 0.433),
 ]
+# Ratings aren't fixed for the rest of the season: each simulation gives
+# every team a random rating offset for the remaining games, SD =
+# DRIFT_SD0 * (share of regular season left)**DRIFT_K, fit to how far this
+# league's ratings actually moved from each date to the end of the regular
+# season. Zero once the regular season is over. (Same fix as DILLON: fixed
+# ratings made early-season odds overconfident.)
+DRIFT_SD0, DRIFT_K = 0.633, 0.46
 NO_POSTSEASON = {1994}                 # strike
 # 1995-97 Division Series matchups followed a fixed rotation, not seeding;
 # the wild card's actual opponent in the years that broke the usual rule
@@ -195,6 +202,9 @@ class SeasonSim:
 
         played = self.rs['home_pts'].notna() & (self.rs['date'] <= d)
         done, rest = self.rs[played], self.rs[~played]
+        frac_left = len(rest) / max(len(self.rs), 1)
+        sd = DRIFT_SD0 * frac_left ** DRIFT_K if frac_left > 0 else 0.0
+        E = rng.normal(0.0, sd, (n_sims, T)) if sd > 0 else None   # per-sim rating offsets
 
         def standings(sub):
             w = np.zeros(T); gp = np.zeros(T)
@@ -207,7 +217,7 @@ class SeasonSim:
         hw_all = None
         if len(rest):
             h = rest['h'].to_numpy(); a = rest['a'].to_numpy()
-            ph = ndtr(A * (R[h] - R[a] + hp))
+            ph = ndtr(A * (R[h] - R[a] + hp + (0.0 if E is None else E[:, h] - E[:, a])))
             hw_all = (rng.random((n_sims, len(rest))) < ph).astype(np.float32)
             Hm = np.zeros((len(rest), T), np.float32); Hm[np.arange(len(rest)), h] = 1
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1
@@ -346,7 +356,8 @@ class SeasonSim:
                     won = np.full(n_sims, actual[gi] == self.teams[a[0]]); self.used_actual += 1
                 else:
                     a_home = a_better if better_hosts else ~a_better
-                    won = rng.random(n_sims) < ndtr(A * (R[a] - R[b] + np.where(a_home, edge_h, -edge_h)))
+                    off = 0.0 if E is None else E[sim_ix, a] - E[sim_ix, b]
+                    won = rng.random(n_sims) < ndtr(A * (R[a] - R[b] + off + np.where(a_home, edge_h, -edge_h)))
                 live = (wa < need) & (wb < need)
                 wa += won & live; wb += ~won & live
             a_wins = wa >= need
