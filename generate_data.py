@@ -1336,7 +1336,7 @@ for season in sorted(_brackets, reverse=True):
         if any(t["adv"][-1] >= 1.0 for t in teams_):
             stage = "Champion"
         elif not played:
-            stage = "Before playoffs"
+            stage = "Before postseason"
         else:
             live = [x for x in matchups if x[5] is None]
             stage = names[min(x[0] for x in live) - 1] if live else names[max(x[0] for x in played) - 1]
@@ -1346,7 +1346,10 @@ for season in sorted(_brackets, reverse=True):
                         for x in day.itertuples(index=False)] if played else [],
             "teams": teams_,
         })
-    _po_seasons.append({"season": int(season), "rounds": names, "rounds_short": short, "snapshots": snaps})
+    # 1981's split season had no true seeds (first- vs second-half division
+    # winners), so the tab hides the seed column that year.
+    _po_seasons.append({"season": int(season), "rounds": names, "rounds_short": short,
+                        "hide_seed": season == 1981, "snapshots": snaps})
     with open(f"docs/data/playoff_odds/{season}.json", "w") as f:
         json.dump(_po_seasons[-1], f, separators=(",", ":"))
 with open("docs/data/playoff_odds/index.json", "w") as f:
