@@ -6,3 +6,5 @@ venv/
 # Engine-migration backup snapshots (never commit)
 *-bak
 griffey_ratings.csv.gz
+title_odds_cache/
+mlb_schedule.csv

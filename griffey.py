@@ -300,6 +300,36 @@ def fetch_mlb_stats_api(year, since_date=None):
     return df
 
 
+SCHEDULE_CSV = "mlb_schedule.csv"
+
+
+def fetch_mlb_schedule(year):
+    """Unplayed regular-season games for the rest of `year` (the title-odds
+    sim's remaining schedule) -> SCHEDULE_CSV, in GRIFFEY's team names."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    url = f"{STATSAPI_URL}?sportId=1&gameType=R&startDate={today}&endDate={year}-12-31"
+    with urlopen(url) as resp:
+        data = json.load(resp)
+    name_to_code = _name_to_retrosheet_code()
+    rows = []
+    for date_obj in data.get("dates", []):
+        for g in date_obj.get("games", []):
+            if g.get("status", {}).get("abstractGameState") == "Final":
+                continue
+            if g.get("status", {}).get("detailedState") in ("Postponed", "Cancelled"):
+                continue
+            h = name_to_code.get(g["teams"]["home"]["team"]["name"])
+            a = name_to_code.get(g["teams"]["away"]["team"]["name"])
+            if not h or not a:
+                continue
+            rows.append({"date_game": g["officialDate"], "home_team_name": RETROSHEET_TEAM[h],
+                         "visitor_team_name": RETROSHEET_TEAM[a]})
+    df = pd.DataFrame(rows, columns=["date_game", "home_team_name", "visitor_team_name"])
+    df.to_csv(SCHEDULE_CSV, index=False)
+    print(f"  {len(df)} scheduled regular-season games left in {year} -> {SCHEDULE_CSV}")
+    return df
+
+
 def merge_game_sources(retrosheet_df, current_df):
     """Concat Retrosheet historical + MLB Stats API current-year. Dedupes by gid so
     repeated games are kept once. Retrosheet wins for the overlap (richer metadata)."""
@@ -807,6 +837,7 @@ if __name__ == "__main__":
         print(f"  Combined dataset: {len(raw):,} games.")
     except Exception as e:
         print(f"  WARN: MLB Stats API fetch failed ({e}). Continuing with Retrosheet only.")
+    fetch_mlb_schedule(current_year)   # a failure here should fail the run, not go stale
 
     master = prepare_game_data(raw)
     print(f"\nMargin sanity: mean home margin = {master['home_margin'].mean():+.3f}, home win rate = {master['home_win'].mean()*100:.1f}%")
