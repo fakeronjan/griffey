@@ -291,6 +291,7 @@ def fetch_mlb_stats_api(year, since_date=None):
                 "vruns": int(away_score),
                 "number": retro_dh,
                 "gametype": api_to_retro_gametype.get(g.get("gameType"), "regular"),
+                "site": f"V{g['venue']['id']}" if g.get("venue", {}).get("id") else None,
             })
 
     if unmapped:
@@ -396,6 +397,17 @@ def prepare_game_data(raw_df):
     # there were occasional ties before suspended-game rules tightened.)
     df["is_tie"] = (df["home_margin"] == 0).astype(int)
 
+    # Neutral site: a park that isn't the home team's main park that season and
+    # hosted <=9 of its home games (Tokyo/London/Mexico City openers, 2020 bubble
+    # postseason, weather relocations). Temporary homes with 10+ games count as home.
+    if "site" not in df.columns:
+        df["site"] = np.nan
+    site = df["site"].fillna("?").astype(str)
+    grp = [df["season"], df["hometeam"]]
+    n_at_site = site.groupby(grp + [site]).transform("size")
+    modal = site.groupby(grp).transform(lambda s: s.value_counts().idxmax())
+    df["is_neutral"] = ((site != modal) & (n_at_site <= 9) & (site != "?")).astype(int)
+
     # Sort + dedupe
     df = df.sort_values("date_game").drop_duplicates(subset=["gid"], keep="first")
 
@@ -424,7 +436,7 @@ def prepare_game_data(raw_df):
         "grouped_date_id", "unique_game_id",
         "home_wl", "visitor_wl",
         "home_result", "visitor_result",
-        "gametype",
+        "gametype", "is_neutral",
     ]
     df = df[out_cols]
     df.to_csv(ALL_GAMES_CSV, index=False)
@@ -477,6 +489,12 @@ def _connected_components(teams, edges):
     return out
 
 
+def _neutral_mask(df):
+    if "is_neutral" not in df.columns:
+        return np.zeros(len(df), dtype=bool)
+    return df["is_neutral"].fillna(0).to_numpy().astype(bool)
+
+
 def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
     """
     Solve jointly for team BATTING + PITCHING ratings AND home-park run-
@@ -526,6 +544,9 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
     home_names    = window_df["home_team_name"].to_numpy()
     visitor_names = window_df["visitor_team_name"].to_numpy()
 
+    # Neutral-site games: no home edge and no home-park term
+    hca_g = np.where(_neutral_mask(window_df), 0.0, hca)
+
     mu = (home_pts.sum() + visitor_pts.sum()) / (2 * n_games)
     h_off_share = float(hca_off_share)
     h_def_share = 1.0 - h_off_share
@@ -551,13 +572,15 @@ def _solve_wls_od(window_df, hca, weighting_mode, season, hca_off_share=0.5):
         # home_BAT - visitor_PIT + PARK[home] = home_runs - mu - hca*h_off_share
         X[2*i,     h_idx]                    = 1.0
         X[2*i,     n_teams + v_idx]          = -1.0
-        X[2*i,     2 * n_teams + h_idx]      = 1.0
-        y_home = home_pts[i] - mu - hca * h_off_share
+        if hca_g[i]:
+            X[2*i,     2 * n_teams + h_idx]  = 1.0
+        y_home = home_pts[i] - mu - hca_g[i] * h_off_share
         # visitor_BAT - home_PIT + PARK[home] = visitor_runs - mu + hca*h_def_share
         X[2*i + 1, v_idx]                    = 1.0
         X[2*i + 1, n_teams + h_idx]          = -1.0
-        X[2*i + 1, 2 * n_teams + h_idx]      = 1.0
-        y_vis  = visitor_pts[i] - mu + hca * h_def_share
+        if hca_g[i]:
+            X[2*i + 1, 2 * n_teams + h_idx]  = 1.0
+        y_vis  = visitor_pts[i] - mu + hca_g[i] * h_def_share
 
         if weighting_mode == "wls":
             y[2*i]     = y_home
@@ -639,7 +662,7 @@ def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap, sea
     y = np.zeros(n_rows)
     w = np.zeros(n_rows)
 
-    raw_margin = home_pts - visitor_pts - hca
+    raw_margin = home_pts - visitor_pts - np.where(_neutral_mask(window_df), 0.0, hca)
     transformed = _apply_margin_transform(raw_margin, margin_transform, margin_cap)
 
     for i in range(n_games):

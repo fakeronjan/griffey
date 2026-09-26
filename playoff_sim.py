@@ -7,7 +7,8 @@ season's format, then play the bracket. Anything already played is fixed.
 Game model (probit on 140,343 MLB games 1961-2026, pre-game snapshot
 ratings, fit by log loss per era):
     P(home win) = Phi(A * (rating_home - rating_away + home_runs))
-2020's Division Series onward were at neutral sites.
+Neutral-site games (Tokyo/London/Mexico City series, 2020 Division Series
+onward) get no home edge.
 
 Output per (snapshot, team): probability of making the postseason, reaching
 each later round, and the title (the Title odds column).
@@ -135,9 +136,12 @@ class SeasonSim:
         postseason."""
         self.season = season
         g = games.sort_values('date', kind='stable').reset_index(drop=True)
-        rs = g[g['gametype'] == 'regular'][['date', 'home', 'away', 'home_pts', 'visitor_pts']]
+        if 'is_neutral' not in g.columns:
+            g = g.assign(is_neutral=0)
+        rs = g[g['gametype'] == 'regular'][['date', 'home', 'away', 'home_pts', 'visitor_pts', 'is_neutral']]
         if schedule is not None and len(schedule):
             rs = pd.concat([rs, schedule.assign(home_pts=np.nan, visitor_pts=np.nan)], ignore_index=True)
+        rs = rs.assign(is_neutral=rs['is_neutral'].fillna(0).astype(int))
         rs = rs[~((rs['home_pts'] == rs['visitor_pts']) & rs['home_pts'].notna())]  # tie games don't count
         self.teams = sorted(set(rs['home']) | set(rs['away']))
         self.idx = {t: i for i, t in enumerate(self.teams)}
@@ -217,7 +221,8 @@ class SeasonSim:
         hw_all = None
         if len(rest):
             h = rest['h'].to_numpy(); a = rest['a'].to_numpy()
-            ph = ndtr(A * (R[h] - R[a] + hp + (0.0 if E is None else E[:, h] - E[:, a])))
+            hp_g = np.where(rest['is_neutral'].to_numpy() == 1, 0.0, hp)   # neutral site: no edge
+            ph = ndtr(A * (R[h] - R[a] + hp_g + (0.0 if E is None else E[:, h] - E[:, a])))
             hw_all = (rng.random((n_sims, len(rest))) < ph).astype(np.float32)
             Hm = np.zeros((len(rest), T), np.float32); Hm[np.arange(len(rest)), h] = 1
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1

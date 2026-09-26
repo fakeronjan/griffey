@@ -728,7 +728,8 @@ def _div_of(team, season):
 
 _sim_games = games.rename(columns={"date_game": "date", "home_team_name": "home",
                                    "visitor_team_name": "away"})
-_sim_games = _sim_games[["season", "date", "home", "away", "home_pts", "visitor_pts", "gametype"]].copy()
+_sim_games = _sim_games[["season", "date", "home", "away", "home_pts", "visitor_pts", "gametype",
+                         "is_neutral"]].copy()
 _cur_season = int(_sim_games["season"].max())
 _schedule = None
 if os.path.exists("mlb_schedule.csv"):
