@@ -2,7 +2,7 @@ name: Update GRIFFEY Ratings
 
 on:
   schedule:
-    - cron: '53 16 * * *'   # 16:53 UTC daily - after COBI (16:33); MLB Stats API + Retrosheet (separate sources from sports-reference)
+    - cron: '53 19 * * *'  # backstop, 19:53 UTC. The droplet (157.245.209.249) dispatches this at 16:53 UTC; GitHub's own cron starts hours late, see /opt/fleet-dispatch there
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 permissions:
