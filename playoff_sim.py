@@ -476,7 +476,10 @@ def _fingerprint(season, games, ratings_df, schedule, current_season):
         p = _os.path.join(here, fn)
         if _os.path.exists(p):
             h.update(open(p, 'rb').read())
-    g = games[games['season'] == season].sort_values(['date', 'home', 'away']).copy()
+    # Full sort key: doubleheaders tie on date/home/away, and the order they
+    # arrive in changes day to day, which used to re-hash ~20 old seasons daily.
+    g = games[games['season'] == season]
+    g = g.sort_values(list(g.columns), kind='stable').copy()
     h.update(g.to_csv(index=False).encode())
     r = ratings_df[ratings_df['season'] == season].sort_values(['date', 'name']).copy()
     r['rating'] = r['rating'].round(3)
