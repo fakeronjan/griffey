@@ -733,8 +733,11 @@ _sim_games = _sim_games[["season", "date", "home", "away", "home_pts", "visitor_
 _cur_season = int(_sim_games["season"].max())
 _schedule = None
 if os.path.exists("mlb_schedule.csv"):
-    _schedule = pd.read_csv("mlb_schedule.csv", parse_dates=["date_game"]).rename(
+    _schedule = pd.read_csv("mlb_schedule.csv").rename(
         columns={"date_game": "date", "home_team_name": "home", "visitor_team_name": "away"})
+    # Explicit: once the regular season ends the file is header-only, and
+    # parse_dates leaves an empty column as object dtype (no .dt).
+    _schedule["date"] = pd.to_datetime(_schedule["date"])
     _schedule = _schedule[_schedule["date"].dt.year == _cur_season]
 _sim_ratings = ratings[["season", "ranking_date", "name", "rating"]].rename(columns={"ranking_date": "date"})
 _playoff_odds, _brackets = playoff_sim.compute_cached(
