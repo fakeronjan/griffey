@@ -23,10 +23,7 @@ import numpy as np
 import pandas as pd
 from scipy.special import ndtr
 
-# Simulation counts (fleet standard): regular-season dates 10k; once the
-# regular season is over, 100k.
-N_SIMS = 10_000
-N_SIMS_PLAYOFFS = 100_000
+N_SIMS = 10_000            # every snapshot, playoffs included (fleet standard since 2026-10-02)
 
 # (first season, A, home-field runs), fit per era.
 ERA_PARAMS = [
@@ -451,7 +448,7 @@ def compute(games, ratings_df, league_of, div_of, current_season, schedule=None,
         sim = SeasonSim(season, g, league_of, div_of, ratings,
                         schedule if season == current_season else None)
         for d in sorted(ratings):
-            n = N_SIMS_PLAYOFFS if sim.rs_over(d) else N_SIMS
+            n = N_SIMS
             o = sim.odds_at(d, n_sims=n)
             if sim.rs_complete and sim.seeds:
                 brackets.setdefault(season, {})[d] = (dict(sim.seeds), list(sim.matchups), n)
