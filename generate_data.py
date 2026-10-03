@@ -233,6 +233,9 @@ def clean(val):
 # values flow through.
 _title_odds_cache = {}        # (ranking_id, team) -> float
 _title_odds_rank_cache = {}   # ranking_id -> {team: rank}
+_po_odds_cache = {}           # (ranking_id, team) -> postseason odds (float)
+_po_odds_rank_cache = {}      # ranking_id -> {team: rank}
+_proj_cache = {}              # (ranking_id, team) -> Proj Record fields
 
 def _title_odds_val(ranking_id, team):
     if ranking_id is None or team is None:
@@ -269,7 +272,19 @@ def _od_fields(r):
         'park_factor_rank': int(r['park_factor_rank']) if 'park_factor_rank' in r and not pd.isna(r['park_factor_rank']) else None,
         'title_odds':       round(float(odds), 4) if odds is not None else None,
         'title_odds_rank':  int(odds_rank) if odds_rank is not None else None,
+        **_po_and_proj(rid, team_name),
     }
+
+
+def _po_and_proj(rid, team):
+    """Postseason odds + rank (Postseason / Title Odds) and, while the
+    regular season is going, the Proj Record fields."""
+    if rid is None or team is None:
+        return {}
+    po = _po_odds_cache.get((rid, team))
+    rm = _po_odds_rank_cache.get(rid) or {}
+    return {'playoff_odds': round(po, 4) if po is not None else None,
+            'playoff_odds_rank': rm.get(team), **_proj_cache.get((rid, team), {})}
 
 
 def slug(name):
@@ -770,6 +785,24 @@ for rid, pairs in _pairs_by_rid.items():
 
 print(f"  Title odds cached for {len(_title_odds_cache):,} (snapshot, team) pairs "
       f"across {len(_title_odds_rank_cache):,} snapshots.")
+
+# Postseason odds (share of sims making the postseason) + per-snapshot rank,
+# and the Proj Record percentiles while the regular season is going.
+for rid, team, p in _playoff_odds[["ranking_id", "team", "playoffs"]].itertuples(index=False):
+    if p > 0 and not pd.isna(rid):
+        _po_odds_cache[(int(rid), team)] = float(p)
+for rid, pairs in pd.Series(_po_odds_cache, dtype=float).groupby(level=0):
+    rank_map, prev, prev_rank = {}, None, 0
+    for i, ((_, team), v) in enumerate(pairs.sort_values(ascending=False).items(), start=1):
+        if v != prev:
+            prev_rank, prev = i, v
+        rank_map[team] = prev_rank
+    _po_odds_rank_cache[int(rid)] = rank_map
+if "proj_w50" in _playoff_odds.columns:
+    for rid, team, a, b, c, gms in _playoff_odds[["ranking_id", "team", "proj_w20", "proj_w50", "proj_w80",
+                                                   "proj_games"]].itertuples(index=False):
+        if not pd.isna(b) and not pd.isna(rid):
+            _proj_cache[(int(rid), team)] = {"proj": [int(a), int(b), int(c)], "proj_games": int(gms)}
 
 
 # =========================================================
