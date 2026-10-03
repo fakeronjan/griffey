@@ -432,5 +432,23 @@
    "San Diego Padres",
    "Cincinnati Reds"
   ]
+ },
+ "2026": {
+  "AL": [
+   "Tampa Bay Rays",
+   "Cleveland Guardians",
+   "Houston Astros",
+   "New York Yankees",
+   "Boston Red Sox",
+   "Chicago White Sox"
+  ],
+  "NL": [
+   "Milwaukee Brewers",
+   "Los Angeles Dodgers",
+   "Atlanta Braves",
+   "San Diego Padres",
+   "Chicago Cubs",
+   "Philadelphia Phillies"
+  ]
  }
 }
