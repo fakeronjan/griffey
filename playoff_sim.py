@@ -238,15 +238,15 @@ class SeasonSim:
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1
             W += hw_all @ Hm + (1 - hw_all) @ Am
             G += (Hm + Am).sum(0)
-        # Projected record (Standings' Proj Record bar): 20th/50th/80th
+        # Projected record (Standings' Proj Record bar): 10th/50th/90th
         # percentile of simulated final wins while games remain (tie games
         # don't count). Actual simulated values; draws no random numbers.
-        proj = ((np.quantile(W, [0.2, 0.5, 0.8], axis=0, method='inverted_cdf'), G[0])
+        proj = ((np.quantile(W, [0.1, 0.5, 0.9], axis=0, method='inverted_cdf'), G[0])
                 if len(rest) else None)
 
         def with_proj(df_):
             if proj is not None:
-                (df_['proj_w20'], df_['proj_w50'], df_['proj_w80']), df_['proj_games'] = proj
+                (df_['proj_lo'], df_['proj_mid'], df_['proj_hi']), df_['proj_games'] = proj
             return df_
         pct = W / np.maximum(G, 1)
         static = self._static_tiebreak(done) if rest.empty else np.zeros(T)
