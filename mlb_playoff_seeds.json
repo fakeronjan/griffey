@@ -1,0 +1,436 @@
+{
+ "1998": {
+  "AL": [
+   "New York Yankees",
+   "Cleveland Guardians",
+   "Texas Rangers",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "Atlanta Braves",
+   "Houston Astros",
+   "San Diego Padres",
+   "Chicago Cubs"
+  ]
+ },
+ "1999": {
+  "AL": [
+   "New York Yankees",
+   "Cleveland Guardians",
+   "Texas Rangers",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "Atlanta Braves",
+   "Arizona Diamondbacks",
+   "Houston Astros",
+   "New York Mets"
+  ]
+ },
+ "2000": {
+  "AL": [
+   "Chicago White Sox",
+   "Oakland Athletics",
+   "New York Yankees",
+   "Seattle Mariners"
+  ],
+  "NL": [
+   "San Francisco Giants",
+   "St. Louis Cardinals",
+   "Atlanta Braves",
+   "New York Mets"
+  ]
+ },
+ "2001": {
+  "AL": [
+   "Seattle Mariners",
+   "New York Yankees",
+   "Cleveland Guardians",
+   "Oakland Athletics"
+  ],
+  "NL": [
+   "Houston Astros",
+   "Arizona Diamondbacks",
+   "Atlanta Braves",
+   "St. Louis Cardinals"
+  ]
+ },
+ "2002": {
+  "AL": [
+   "New York Yankees",
+   "Oakland Athletics",
+   "Minnesota Twins",
+   "Los Angeles Angels"
+  ],
+  "NL": [
+   "Atlanta Braves",
+   "Arizona Diamondbacks",
+   "St. Louis Cardinals",
+   "San Francisco Giants"
+  ]
+ },
+ "2003": {
+  "AL": [
+   "New York Yankees",
+   "Oakland Athletics",
+   "Minnesota Twins",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "Atlanta Braves",
+   "San Francisco Giants",
+   "Chicago Cubs",
+   "Miami Marlins"
+  ]
+ },
+ "2004": {
+  "AL": [
+   "New York Yankees",
+   "Los Angeles Angels",
+   "Minnesota Twins",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "St. Louis Cardinals",
+   "Atlanta Braves",
+   "Los Angeles Dodgers",
+   "Houston Astros"
+  ]
+ },
+ "2005": {
+  "AL": [
+   "Chicago White Sox",
+   "Los Angeles Angels",
+   "New York Yankees",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "St. Louis Cardinals",
+   "Atlanta Braves",
+   "San Diego Padres",
+   "Houston Astros"
+  ]
+ },
+ "2006": {
+  "AL": [
+   "New York Yankees",
+   "Minnesota Twins",
+   "Oakland Athletics",
+   "Detroit Tigers"
+  ],
+  "NL": [
+   "New York Mets",
+   "San Diego Padres",
+   "St. Louis Cardinals",
+   "Los Angeles Dodgers"
+  ]
+ },
+ "2007": {
+  "AL": [
+   "Boston Red Sox",
+   "Cleveland Guardians",
+   "Los Angeles Angels",
+   "New York Yankees"
+  ],
+  "NL": [
+   "Arizona Diamondbacks",
+   "Philadelphia Phillies",
+   "Chicago Cubs",
+   "Colorado Rockies"
+  ]
+ },
+ "2008": {
+  "AL": [
+   "Los Angeles Angels",
+   "Tampa Bay Rays",
+   "Chicago White Sox",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "Chicago Cubs",
+   "Philadelphia Phillies",
+   "Los Angeles Dodgers",
+   "Milwaukee Brewers"
+  ]
+ },
+ "2009": {
+  "AL": [
+   "New York Yankees",
+   "Los Angeles Angels",
+   "Minnesota Twins",
+   "Boston Red Sox"
+  ],
+  "NL": [
+   "Los Angeles Dodgers",
+   "Philadelphia Phillies",
+   "St. Louis Cardinals",
+   "Colorado Rockies"
+  ]
+ },
+ "2010": {
+  "AL": [
+   "Tampa Bay Rays",
+   "Minnesota Twins",
+   "Texas Rangers",
+   "New York Yankees"
+  ],
+  "NL": [
+   "Philadelphia Phillies",
+   "San Francisco Giants",
+   "Cincinnati Reds",
+   "Atlanta Braves"
+  ]
+ },
+ "2011": {
+  "AL": [
+   "New York Yankees",
+   "Texas Rangers",
+   "Detroit Tigers",
+   "Tampa Bay Rays"
+  ],
+  "NL": [
+   "Philadelphia Phillies",
+   "Milwaukee Brewers",
+   "Arizona Diamondbacks",
+   "St. Louis Cardinals"
+  ]
+ },
+ "2012": {
+  "AL": [
+   "New York Yankees",
+   "Oakland Athletics",
+   "Detroit Tigers",
+   "Texas Rangers",
+   "Baltimore Orioles"
+  ],
+  "NL": [
+   "Washington Nationals",
+   "Cincinnati Reds",
+   "San Francisco Giants",
+   "Atlanta Braves",
+   "St. Louis Cardinals"
+  ]
+ },
+ "2013": {
+  "AL": [
+   "Boston Red Sox",
+   "Oakland Athletics",
+   "Detroit Tigers",
+   "Cleveland Guardians",
+   "Tampa Bay Rays"
+  ],
+  "NL": [
+   "St. Louis Cardinals",
+   "Atlanta Braves",
+   "Los Angeles Dodgers",
+   "Pittsburgh Pirates",
+   "Cincinnati Reds"
+  ]
+ },
+ "2014": {
+  "AL": [
+   "Los Angeles Angels",
+   "Baltimore Orioles",
+   "Detroit Tigers",
+   "Kansas City Royals",
+   "Oakland Athletics"
+  ],
+  "NL": [
+   "Washington Nationals",
+   "Los Angeles Dodgers",
+   "St. Louis Cardinals",
+   "Pittsburgh Pirates",
+   "San Francisco Giants"
+  ]
+ },
+ "2015": {
+  "AL": [
+   "Kansas City Royals",
+   "Toronto Blue Jays",
+   "Texas Rangers",
+   "New York Yankees",
+   "Houston Astros"
+  ],
+  "NL": [
+   "St. Louis Cardinals",
+   "Los Angeles Dodgers",
+   "New York Mets",
+   "Pittsburgh Pirates",
+   "Chicago Cubs"
+  ]
+ },
+ "2016": {
+  "AL": [
+   "Texas Rangers",
+   "Cleveland Guardians",
+   "Boston Red Sox",
+   "Toronto Blue Jays",
+   "Baltimore Orioles"
+  ],
+  "NL": [
+   "Chicago Cubs",
+   "Washington Nationals",
+   "Los Angeles Dodgers",
+   "New York Mets",
+   "San Francisco Giants"
+  ]
+ },
+ "2017": {
+  "AL": [
+   "Cleveland Guardians",
+   "Houston Astros",
+   "Boston Red Sox",
+   "New York Yankees",
+   "Minnesota Twins"
+  ],
+  "NL": [
+   "Los Angeles Dodgers",
+   "Washington Nationals",
+   "Chicago Cubs",
+   "Arizona Diamondbacks",
+   "Colorado Rockies"
+  ]
+ },
+ "2018": {
+  "AL": [
+   "Boston Red Sox",
+   "Houston Astros",
+   "Cleveland Guardians",
+   "New York Yankees",
+   "Oakland Athletics"
+  ],
+  "NL": [
+   "Milwaukee Brewers",
+   "Los Angeles Dodgers",
+   "Atlanta Braves",
+   "Chicago Cubs",
+   "Colorado Rockies"
+  ]
+ },
+ "2019": {
+  "AL": [
+   "Houston Astros",
+   "New York Yankees",
+   "Minnesota Twins",
+   "Oakland Athletics",
+   "Tampa Bay Rays"
+  ],
+  "NL": [
+   "Los Angeles Dodgers",
+   "Atlanta Braves",
+   "St. Louis Cardinals",
+   "Washington Nationals",
+   "Milwaukee Brewers"
+  ]
+ },
+ "2020": {
+  "AL": [
+   "Tampa Bay Rays",
+   "Oakland Athletics",
+   "Minnesota Twins",
+   "Cleveland Guardians",
+   "New York Yankees",
+   "Houston Astros",
+   "Chicago White Sox",
+   "Toronto Blue Jays"
+  ],
+  "NL": [
+   "Los Angeles Dodgers",
+   "Atlanta Braves",
+   "Chicago Cubs",
+   "San Diego Padres",
+   "St. Louis Cardinals",
+   "Miami Marlins",
+   "Cincinnati Reds",
+   "Milwaukee Brewers"
+  ]
+ },
+ "2021": {
+  "AL": [
+   "Tampa Bay Rays",
+   "Houston Astros",
+   "Chicago White Sox",
+   "Boston Red Sox",
+   "New York Yankees"
+  ],
+  "NL": [
+   "San Francisco Giants",
+   "Milwaukee Brewers",
+   "Atlanta Braves",
+   "Los Angeles Dodgers",
+   "St. Louis Cardinals"
+  ]
+ },
+ "2022": {
+  "AL": [
+   "Houston Astros",
+   "New York Yankees",
+   "Cleveland Guardians",
+   "Toronto Blue Jays",
+   "Seattle Mariners",
+   "Tampa Bay Rays"
+  ],
+  "NL": [
+   "Los Angeles Dodgers",
+   "Atlanta Braves",
+   "St. Louis Cardinals",
+   "New York Mets",
+   "San Diego Padres",
+   "Philadelphia Phillies"
+  ]
+ },
+ "2023": {
+  "AL": [
+   "Baltimore Orioles",
+   "Houston Astros",
+   "Minnesota Twins",
+   "Tampa Bay Rays",
+   "Texas Rangers",
+   "Toronto Blue Jays"
+  ],
+  "NL": [
+   "Atlanta Braves",
+   "Los Angeles Dodgers",
+   "Milwaukee Brewers",
+   "Philadelphia Phillies",
+   "Miami Marlins",
+   "Arizona Diamondbacks"
+  ]
+ },
+ "2024": {
+  "AL": [
+   "New York Yankees",
+   "Cleveland Guardians",
+   "Houston Astros",
+   "Baltimore Orioles",
+   "Kansas City Royals",
+   "Detroit Tigers"
+  ],
+  "NL": [
+   "Los Angeles Dodgers",
+   "Philadelphia Phillies",
+   "Milwaukee Brewers",
+   "San Diego Padres",
+   "Atlanta Braves",
+   "New York Mets"
+  ]
+ },
+ "2025": {
+  "AL": [
+   "Toronto Blue Jays",
+   "Seattle Mariners",
+   "Cleveland Guardians",
+   "New York Yankees",
+   "Boston Red Sox",
+   "Detroit Tigers"
+  ],
+  "NL": [
+   "Milwaukee Brewers",
+   "Philadelphia Phillies",
+   "Los Angeles Dodgers",
+   "Chicago Cubs",
+   "San Diego Padres",
+   "Cincinnati Reds"
+  ]
+ }
+}

@@ -54,6 +54,15 @@ _TB = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'mlb_tiebreak_
 TIEBREAK_WINNERS = ({int(k): v for k, v in _json.load(open(_TB)).items()}
                     if _os.path.exists(_TB) else {})
 
+# The real postseason seeds, 1998 on (when MLB began seeding by record):
+# {season: {'AL'/'NL': [seed 1, seed 2, ...]}}. Once the regular season is
+# over these ARE the seeds. From Wikipedia's postseason brackets; griffey.py
+# adds each new season. Earlier eras had no seeds (home field rotated); real
+# series take their hosts from the games themselves either way.
+_SEEDS = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'mlb_playoff_seeds.json')
+REAL_SEEDS = ({int(k): v for k, v in _json.load(open(_SEEDS)).items()}
+              if _os.path.exists(_SEEDS) else {})
+
 
 def era_params(season):
     a, h = ERA_PARAMS[0][1:]
@@ -112,8 +121,10 @@ def entry_rounds(season):
     return out
 
 
-def host_pattern(best_of, kind):
-    """Per game: True = better record hosts."""
+def host_pattern(best_of, kind, season=None):
+    """Per game: True = the team with home field hosts. Best-of-5 was 2-3
+    (home field team opened on the road) through 1984 and in the 1995-97
+    Division Series; 2-2-1 otherwise (from the game data)."""
     if kind == 'wcs':          # Wild Card Series: every game at the higher seed
         return [True] * best_of
     if best_of == 1:
@@ -121,6 +132,8 @@ def host_pattern(best_of, kind):
     if best_of == 3:
         return [True, False, True]
     if best_of == 5:
+        if season is not None and (season <= 1984 or 1995 <= season <= 1997):
+            return [False, False, True, True, True]
         return [True, True, False, False, True]
     return [True, True, False, False, False, True, True]   # 2-3-2
 
@@ -312,6 +325,8 @@ class SeasonSim:
                     is_ru = np.zeros((S, T), bool); is_ru[six[:, None], ru] = True
                     tier = is_dw[:, m] * 2.0 + is_ru[:, m] * 1.0
                     seeds[lg] = ranked(m, pct_s, tier)[:, :8]
+        if rest.empty and season in REAL_SEEDS:
+            seeds = {lg: np.array([[self.idx[t] for t in REAL_SEEDS[season][lg]]]) for lg in seeds}
         if S == 1:
             seeds = {k: np.broadcast_to(v, (n_sims, v.shape[1])) for k, v in seeds.items()}
         # overall record rank per team (home field)
@@ -324,6 +339,15 @@ class SeasonSim:
         ps_by_pair = {}
         for r in self.ps[self.ps['date'] <= d].itertuples(index=False):
             ps_by_pair.setdefault(frozenset((r.home, r.away)), []).append(r.winner)
+
+        # Every real postseason game's host, in order per pair: a real series
+        # uses them (home field rotated by division or league for decades,
+        # and the World Series followed the All-Star Game in 2003-16), then
+        # the format's order for games past the real series' length.
+        real_hosts = {}
+        for r in self.ps.itertuples(index=False):
+            real_hosts.setdefault(frozenset((r.home, r.away)), []).append(r.home)
+        self.host_miss = 0
 
         self.used_actual = 0
         self.rs_complete = rest.empty
@@ -350,14 +374,21 @@ class SeasonSim:
             a_better = lg_rank[sim_ix, a] < lg_rank[sim_ix, b]
             fixed = np.all(a == a[0]) and np.all(b == b[0])
             actual = ps_by_pair.get(frozenset((self.teams[a[0]], self.teams[b[0]])), []) if fixed else []
+            pattern = host_pattern(bo, kind, season)
+            hosts = real_hosts.get(frozenset((self.teams[a[0]], self.teams[b[0]])), []) if fixed else []
+            if hosts:
+                real_a = (hosts[0] == self.teams[a[0]]) == pattern[0]     # a had home field
+                self.host_miss += (not neutral) and bool(a_better[0]) != real_a
+                a_better = np.full(n_sims, real_a)
             need = bo // 2 + 1
             edge_h = 0.0 if neutral else hp
             wa = np.zeros(n_sims, dtype=int); wb = np.zeros(n_sims, dtype=int)
-            for gi, better_hosts in enumerate(host_pattern(bo, kind)):
+            for gi, better_hosts in enumerate(pattern):
                 if gi < len(actual):
                     won = np.full(n_sims, actual[gi] == self.teams[a[0]]); self.used_actual += 1
                 else:
-                    a_home = a_better if better_hosts else ~a_better
+                    a_home = (np.full(n_sims, hosts[gi] == self.teams[a[0]]) if gi < len(hosts)
+                              else (a_better if better_hosts else ~a_better))
                     off = 0.0 if E is None else E[sim_ix, a] - E[sim_ix, b]
                     won = rng.random(n_sims) < ndtr(A * (R[a] - R[b] + off + np.where(a_home, edge_h, -edge_h)))
                 live = (wa < need) & (wb < need)
@@ -483,6 +514,7 @@ def _fingerprint(season, games, ratings_df, schedule, current_season):
     h.update(r.to_csv(index=False).encode())
     if season == current_season and schedule is not None:
         h.update(schedule.sort_values(['date', 'home']).to_csv(index=False).encode())
+    h.update(repr(REAL_SEEDS.get(season)).encode())     # this season's real seeds only
     return h.hexdigest()
 
 
