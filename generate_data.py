@@ -344,6 +344,15 @@ games = games[games["season"] >= 1961].copy()
 if "gametype" not in games.columns:
     games["gametype"] = "regular"
 games["gametype"] = games["gametype"].fillna("regular").astype(str).str.lower()
+
+# Refuse to build from stale ratings. The ratings file isn't in git (it comes
+# from the ratings engine, cached in Actions), so a run on a machine with an old
+# copy would publish old ratings: on 2026-10-02 a local run cut 2026 off at July 8.
+_last_game = pd.to_datetime(games.loc[games["home_pts"].notna(), "date_game"]).max()
+_last_rating = pd.to_datetime(ratings["ranking_date"]).max()
+if _last_game - _last_rating > pd.Timedelta(days=3):
+    raise SystemExit(f"Ratings end {_last_rating.date()} but games run through {_last_game.date()}: "
+                     f"the ratings file is stale. Run the ratings engine first.")
 games["is_playoff_game_flag"] = games["gametype"] != "regular"
 
 print(f"  Ratings: {len(ratings):,} rows, {ratings['season'].min()}-{ratings['season'].max()}")
@@ -642,6 +651,15 @@ for s, rs_end in rs_end_by_season.items():
     }
 
 print(f"  WS detected: {len(ws_results)} seasons.")
+
+# "End of playoffs" only once the World Series is decided (or a season with no
+# postseason at all: 1994). The flag above marks the latest snapshot, which
+# mid-postseason is just the latest day (2026 showed "End of playoffs" after
+# the Wild Card Series). SAKIC gates its PS-end the same way.
+from playoff_sim import NO_POSTSEASON as _NO_PS
+_ps_unfinished = [int(s) for s in rs_end_by_season if int(s) not in ws_results and int(s) not in _NO_PS]
+ratings.loc[ratings["season"].isin(_ps_unfinished), "is_ps_end"] = 0
+print(f"  PS-end held back for postseasons still going: {_ps_unfinished or 'none'}")
 
 
 # =========================================================
