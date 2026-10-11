@@ -124333,11 +124333,11 @@ PIT201905030,2019,2019,2019-05-03,Oakland Athletics,Pittsburgh Pirates,14,1,13,-
 PHI201905030,2019,2019,2019-05-03,Washington Nationals,Philadelphia Phillies,2,4,-2,2,0,1,0,11086,124332,W,L,W 4-2 vs. Washington Nationals,L 2-4 @ Philadelphia Phillies,regular,0
 NYA201905030,2019,2019,2019-05-03,Minnesota Twins,New York Yankees,3,6,-3,3,0,1,0,11086,124333,W,L,W 6-3 vs. Minnesota Twins,L 3-6 @ New York Yankees,regular,0
 MIA201905030,2019,2019,2019-05-03,Atlanta Braves,Miami Marlins,7,2,5,-5,1,0,0,11086,124334,L,W,L 2-7 vs. Atlanta Braves,W 7-2 @ Miami Marlins,regular,0
-CHN201905030,2019,2019,2019-05-03,St. Louis Cardinals,Chicago Cubs,0,4,-4,4,0,1,0,11086,124335,W,L,W 4-0 vs. St. Louis Cardinals,L 0-4 @ Chicago Cubs,regular,0
+CIN201905030,2019,2019,2019-05-03,San Francisco Giants,Cincinnati Reds,12,11,1,-1,1,0,0,11086,124335,L,W,L 11-12 vs. San Francisco Giants,W 12-11 @ Cincinnati Reds,regular,0
 COL201905030,2019,2019,2019-05-03,Arizona Diamondbacks,Colorado Rockies,10,9,1,-1,1,0,0,11086,124336,L,W,L 9-10 vs. Arizona Diamondbacks,W 10-9 @ Colorado Rockies,regular,0
 CLE201905030,2019,2019,2019-05-03,Seattle Mariners,Cleveland Guardians,1,2,-1,1,0,1,0,11086,124337,W,L,W 2-1 vs. Seattle Mariners,L 1-2 @ Cleveland Guardians,regular,0
-CIN201905030,2019,2019,2019-05-03,San Francisco Giants,Cincinnati Reds,12,11,1,-1,1,0,0,11086,124338,L,W,L 11-12 vs. San Francisco Giants,W 12-11 @ Cincinnati Reds,regular,0
-DET201905030,2019,2019,2019-05-03,Kansas City Royals,Detroit Tigers,3,4,-1,1,0,1,0,11086,124339,W,L,W 4-3 vs. Kansas City Royals,L 3-4 @ Detroit Tigers,regular,0
+DET201905030,2019,2019,2019-05-03,Kansas City Royals,Detroit Tigers,3,4,-1,1,0,1,0,11086,124338,W,L,W 4-3 vs. Kansas City Royals,L 3-4 @ Detroit Tigers,regular,0
+CHN201905030,2019,2019,2019-05-03,St. Louis Cardinals,Chicago Cubs,0,4,-4,4,0,1,0,11086,124339,W,L,W 4-0 vs. St. Louis Cardinals,L 0-4 @ Chicago Cubs,regular,0
 CHA201905030,2019,2019,2019-05-03,Boston Red Sox,Chicago White Sox,6,1,5,-5,1,0,0,11086,124340,L,W,L 1-6 vs. Boston Red Sox,W 6-1 @ Chicago White Sox,regular,0
 BAL201905030,2019,2019,2019-05-03,Tampa Bay Rays,Baltimore Orioles,7,0,7,-7,1,0,0,11086,124341,L,W,L 0-7 vs. Tampa Bay Rays,W 7-0 @ Baltimore Orioles,regular,0
 TEX201905040,2019,2019,2019-05-04,Toronto Blue Jays,Texas Rangers,5,8,-3,3,0,1,0,11087,124342,W,L,W 8-5 vs. Toronto Blue Jays,L 5-8 @ Texas Rangers,regular,0
@@ -133211,16 +133211,16 @@ ARI202306120,2023,2023,2023-06-12,Philadelphia Phillies,Arizona Diamondbacks,8,9
 DET202306120,2023,2023,2023-06-12,Atlanta Braves,Detroit Tigers,5,6,-1,1,0,1,0,11828,133210,W,L,W 6-5 vs. Atlanta Braves,L 5-6 @ Detroit Tigers,regular,0
 NYN202306130,2023,2023,2023-06-13,New York Yankees,New York Mets,7,6,1,-1,1,0,0,11829,133211,L,W,L 6-7 vs. New York Yankees,W 7-6 @ New York Mets,regular,0
 SLN202306130,2023,2023,2023-06-13,San Francisco Giants,St. Louis Cardinals,11,3,8,-8,1,0,0,11829,133212,L,W,L 3-11 vs. San Francisco Giants,W 11-3 @ St. Louis Cardinals,regular,0
-TEX202306130,2023,2023,2023-06-13,Los Angeles Angels,Texas Rangers,7,3,4,-4,1,0,0,11829,133213,L,W,L 3-7 vs. Los Angeles Angels,W 7-3 @ Texas Rangers,regular,0
-SEA202306130,2023,2023,2023-06-13,Miami Marlins,Seattle Mariners,3,9,-6,6,0,1,0,11829,133214,W,L,W 9-3 vs. Miami Marlins,L 3-9 @ Seattle Mariners,regular,0
+SEA202306130,2023,2023,2023-06-13,Miami Marlins,Seattle Mariners,3,9,-6,6,0,1,0,11829,133213,W,L,W 9-3 vs. Miami Marlins,L 3-9 @ Seattle Mariners,regular,0
+TEX202306130,2023,2023,2023-06-13,Los Angeles Angels,Texas Rangers,7,3,4,-4,1,0,0,11829,133214,L,W,L 3-7 vs. Los Angeles Angels,W 7-3 @ Texas Rangers,regular,0
 SDN202306130,2023,2023,2023-06-13,Cleveland Guardians,San Diego Padres,3,6,-3,3,0,1,0,11829,133215,W,L,W 6-3 vs. Cleveland Guardians,L 3-6 @ San Diego Padres,regular,0
 OAK202306130,2023,2023,2023-06-13,Tampa Bay Rays,Oakland Athletics,1,2,-1,1,0,1,0,11829,133216,W,L,W 2-1 vs. Tampa Bay Rays,L 1-2 @ Oakland Athletics,regular,0
 MIN202306130,2023,2023,2023-06-13,Milwaukee Brewers,Minnesota Twins,5,7,-2,2,0,1,0,11829,133217,W,L,W 7-5 vs. Milwaukee Brewers,L 5-7 @ Minnesota Twins,regular,0
-BAL202306130,2023,2023,2023-06-13,Toronto Blue Jays,Baltimore Orioles,6,11,-5,5,0,1,0,11829,133218,W,L,W 11-6 vs. Toronto Blue Jays,L 6-11 @ Baltimore Orioles,regular,0
+BOS202306130,2023,2023,2023-06-13,Colorado Rockies,Boston Red Sox,7,6,1,-1,1,0,0,11829,133218,L,W,L 6-7 vs. Colorado Rockies,W 7-6 @ Boston Red Sox,regular,0
 KCA202306130,2023,2023,2023-06-13,Cincinnati Reds,Kansas City Royals,5,4,1,-1,1,0,0,11829,133219,L,W,L 4-5 vs. Cincinnati Reds,W 5-4 @ Kansas City Royals,regular,0
 HOU202306130,2023,2023,2023-06-13,Washington Nationals,Houston Astros,1,6,-5,5,0,1,0,11829,133220,W,L,W 6-1 vs. Washington Nationals,L 1-6 @ Houston Astros,regular,0
 CHN202306130,2023,2023,2023-06-13,Pittsburgh Pirates,Chicago Cubs,3,11,-8,8,0,1,0,11829,133221,W,L,W 11-3 vs. Pittsburgh Pirates,L 3-11 @ Chicago Cubs,regular,0
-BOS202306130,2023,2023,2023-06-13,Colorado Rockies,Boston Red Sox,7,6,1,-1,1,0,0,11829,133222,L,W,L 6-7 vs. Colorado Rockies,W 7-6 @ Boston Red Sox,regular,0
+BAL202306130,2023,2023,2023-06-13,Toronto Blue Jays,Baltimore Orioles,6,11,-5,5,0,1,0,11829,133222,W,L,W 11-6 vs. Toronto Blue Jays,L 6-11 @ Baltimore Orioles,regular,0
 ARI202306130,2023,2023,2023-06-13,Philadelphia Phillies,Arizona Diamondbacks,15,3,12,-12,1,0,0,11829,133223,L,W,L 3-15 vs. Philadelphia Phillies,W 15-3 @ Arizona Diamondbacks,regular,0
 LAN202306130,2023,2023,2023-06-13,Chicago White Sox,Los Angeles Dodgers,1,5,-4,4,0,1,0,11829,133224,W,L,W 5-1 vs. Chicago White Sox,L 1-5 @ Los Angeles Dodgers,regular,0
 TEX202306140,2023,2023,2023-06-14,Los Angeles Angels,Texas Rangers,3,6,-3,3,0,1,0,11830,133225,W,L,W 6-3 vs. Los Angeles Angels,L 3-6 @ Texas Rangers,regular,0
@@ -141532,17 +141532,17 @@ BAL202608180,2026,2026,2026-08-18,New York Yankees,Baltimore Orioles,3,1,2,-2,1,
 NYN202608180,2026,2026,2026-08-18,San Diego Padres,New York Mets,5,2,3,-3,1,0,0,12521,141531,L,W,L 2-5 vs. San Diego Padres,W 5-2 @ New York Mets,regular,0
 TBA202608190,2026,2026,2026-08-19,Toronto Blue Jays,Tampa Bay Rays,6,7,-1,1,0,1,0,12522,141532,W,L,W 7-6 vs. Toronto Blue Jays,L 6-7 @ Tampa Bay Rays,regular,0
 HOU202608190,2026,2026,2026-08-19,Los Angeles Angels,Houston Astros,2,3,-1,1,0,1,0,12522,141533,W,L,W 3-2 vs. Los Angeles Angels,L 2-3 @ Houston Astros,regular,0
-COL202608190,2026,2026,2026-08-19,Los Angeles Dodgers,Colorado Rockies,6,4,2,-2,1,0,0,12522,141534,L,W,L 4-6 vs. Los Angeles Dodgers,W 6-4 @ Colorado Rockies,regular,0
-TEX202608190,2026,2026,2026-08-19,Washington Nationals,Texas Rangers,6,0,6,-6,1,0,0,12522,141535,L,W,L 0-6 vs. Washington Nationals,W 6-0 @ Texas Rangers,regular,0
+TEX202608190,2026,2026,2026-08-19,Washington Nationals,Texas Rangers,6,0,6,-6,1,0,0,12522,141534,L,W,L 0-6 vs. Washington Nationals,W 6-0 @ Texas Rangers,regular,0
+COL202608190,2026,2026,2026-08-19,Los Angeles Dodgers,Colorado Rockies,6,4,2,-2,1,0,0,12522,141535,L,W,L 4-6 vs. Los Angeles Dodgers,W 6-4 @ Colorado Rockies,regular,0
 MIL202608190,2026,2026,2026-08-19,Seattle Mariners,Milwaukee Brewers,7,5,2,-2,1,0,0,12522,141536,L,W,L 5-7 vs. Seattle Mariners,W 7-5 @ Milwaukee Brewers,regular,0
 KCA202608190,2026,2026,2026-08-19,Las Vegas Athletics,Kansas City Royals,7,9,-2,2,0,1,0,12522,141537,W,L,W 9-7 vs. Las Vegas Athletics,L 7-9 @ Kansas City Royals,regular,0
 CIN202608190,2026,2026,2026-08-19,St. Louis Cardinals,Cincinnati Reds,4,5,-1,1,0,1,0,12522,141538,W,L,W 5-4 vs. St. Louis Cardinals,L 4-5 @ Cincinnati Reds,regular,0
-NYN202608190,2026,2026,2026-08-19,San Diego Padres,New York Mets,2,4,-2,2,0,1,0,12522,141539,W,L,W 4-2 vs. San Diego Padres,L 2-4 @ New York Mets,regular,0
+MIN202608190,2026,2026,2026-08-19,Atlanta Braves,Minnesota Twins,4,6,-2,2,0,1,0,12522,141539,W,L,W 6-4 vs. Atlanta Braves,L 4-6 @ Minnesota Twins,regular,0
 BAL202608190,2026,2026,2026-08-19,New York Yankees,Baltimore Orioles,5,3,2,-2,1,0,0,12522,141540,L,W,L 3-5 vs. New York Yankees,W 5-3 @ Baltimore Orioles,regular,0
 PHI202608190,2026,2026,2026-08-19,Miami Marlins,Philadelphia Phillies,1,4,-3,3,0,1,0,12522,141541,W,L,W 4-1 vs. Miami Marlins,L 1-4 @ Philadelphia Phillies,regular,0
 BOS202608190,2026,2026,2026-08-19,Arizona Diamondbacks,Boston Red Sox,7,6,1,-1,1,0,0,12522,141542,L,W,L 6-7 vs. Arizona Diamondbacks,W 7-6 @ Boston Red Sox,regular,0
 CHN202608190,2026,2026,2026-08-19,Chicago White Sox,Chicago Cubs,3,0,3,-3,1,0,0,12522,141543,L,W,L 0-3 vs. Chicago White Sox,W 3-0 @ Chicago Cubs,regular,0
-MIN202608190,2026,2026,2026-08-19,Atlanta Braves,Minnesota Twins,4,6,-2,2,0,1,0,12522,141544,W,L,W 6-4 vs. Atlanta Braves,L 4-6 @ Minnesota Twins,regular,0
+NYN202608190,2026,2026,2026-08-19,San Diego Padres,New York Mets,2,4,-2,2,0,1,0,12522,141544,W,L,W 4-2 vs. San Diego Padres,L 2-4 @ New York Mets,regular,0
 PIT202608190,2026,2026,2026-08-19,Detroit Tigers,Pittsburgh Pirates,3,4,-1,1,0,1,0,12522,141545,W,L,W 4-3 vs. Detroit Tigers,L 3-4 @ Pittsburgh Pirates,regular,0
 CLE202608190,2026,2026,2026-08-19,San Francisco Giants,Cleveland Guardians,1,0,1,-1,1,0,0,12522,141546,L,W,L 0-1 vs. San Francisco Giants,W 1-0 @ Cleveland Guardians,regular,0
 HOU202608200,2026,2026,2026-08-20,Los Angeles Angels,Houston Astros,18,3,15,-15,1,0,0,12523,141547,L,W,L 3-18 vs. Los Angeles Angels,W 18-3 @ Houston Astros,regular,0
@@ -141801,13 +141801,13 @@ MIA202609070,2026,2026,2026-09-07,New York Mets,Miami Marlins,9,4,5,-5,1,0,0,125
 PHI202609070,2026,2026,2026-09-07,Atlanta Braves,Philadelphia Phillies,0,1,-1,1,0,1,0,12541,141800,W,L,W 1-0 vs. Atlanta Braves,L 0-1 @ Philadelphia Phillies,regular,0
 KCA202609070,2026,2026,2026-09-07,Arizona Diamondbacks,Kansas City Royals,5,4,1,-1,1,0,0,12541,141801,L,W,L 4-5 vs. Arizona Diamondbacks,W 5-4 @ Kansas City Royals,regular,0
 CHA202609080,2026,2026,2026-09-08,Pittsburgh Pirates,Chicago White Sox,9,3,6,-6,1,0,0,12542,141802,L,W,L 3-9 vs. Pittsburgh Pirates,W 9-3 @ Chicago White Sox,regular,0
-SFN202609080,2026,2026,2026-09-08,St. Louis Cardinals,San Francisco Giants,1,2,-1,1,0,1,0,12542,141803,W,L,W 2-1 vs. St. Louis Cardinals,L 1-2 @ San Francisco Giants,regular,0
-LAN202609080,2026,2026,2026-09-08,Cincinnati Reds,Los Angeles Dodgers,2,3,-1,1,0,1,0,12542,141804,W,L,W 3-2 vs. Cincinnati Reds,L 2-3 @ Los Angeles Dodgers,regular,0
+LAN202609080,2026,2026,2026-09-08,Cincinnati Reds,Los Angeles Dodgers,2,3,-1,1,0,1,0,12542,141803,W,L,W 3-2 vs. Cincinnati Reds,L 2-3 @ Los Angeles Dodgers,regular,0
+ATH202609080,2026,2026,2026-09-08,Toronto Blue Jays,Las Vegas Athletics,4,2,2,-2,1,0,0,12542,141804,L,W,L 2-4 vs. Toronto Blue Jays,W 4-2 @ Las Vegas Athletics,regular,0
 SEA202609080,2026,2026,2026-09-08,Texas Rangers,Seattle Mariners,10,5,5,-5,1,0,0,12542,141805,L,W,L 5-10 vs. Texas Rangers,W 10-5 @ Seattle Mariners,regular,0
 SDN202609080,2026,2026,2026-09-08,Washington Nationals,San Diego Padres,4,5,-1,1,0,1,0,12542,141806,W,L,W 5-4 vs. Washington Nationals,L 4-5 @ San Diego Padres,regular,0
 MIL202609080,2026,2026,2026-09-08,Chicago Cubs,Milwaukee Brewers,3,4,-1,1,0,1,0,12542,141807,W,L,W 4-3 vs. Chicago Cubs,L 3-4 @ Milwaukee Brewers,regular,0
 KCA202609080,2026,2026,2026-09-08,Arizona Diamondbacks,Kansas City Royals,5,3,2,-2,1,0,0,12542,141808,L,W,L 3-5 vs. Arizona Diamondbacks,W 5-3 @ Kansas City Royals,regular,0
-ATH202609080,2026,2026,2026-09-08,Toronto Blue Jays,Las Vegas Athletics,4,2,2,-2,1,0,0,12542,141809,L,W,L 2-4 vs. Toronto Blue Jays,W 4-2 @ Las Vegas Athletics,regular,0
+SFN202609080,2026,2026,2026-09-08,St. Louis Cardinals,San Francisco Giants,1,2,-1,1,0,1,0,12542,141809,W,L,W 2-1 vs. St. Louis Cardinals,L 1-2 @ San Francisco Giants,regular,0
 NYA202609080,2026,2026,2026-09-08,Colorado Rockies,New York Yankees,3,5,-2,2,0,1,0,12542,141810,W,L,W 5-3 vs. Colorado Rockies,L 3-5 @ New York Yankees,regular,0
 BOS202609080,2026,2026,2026-09-08,Los Angeles Angels,Boston Red Sox,6,1,5,-5,1,0,0,12542,141811,L,W,L 1-6 vs. Los Angeles Angels,W 6-1 @ Boston Red Sox,regular,0
 MIA202609080,2026,2026,2026-09-08,New York Mets,Miami Marlins,7,5,2,-2,1,0,0,12542,141812,L,W,L 5-7 vs. New York Mets,W 7-5 @ Miami Marlins,regular,0
@@ -141948,13 +141948,13 @@ SLN202609190,2026,2026,2026-09-19,Washington Nationals,St. Louis Cardinals,8,5,3
 LAN202609190,2026,2026,2026-09-19,San Francisco Giants,Los Angeles Dodgers,4,10,-6,6,0,1,0,12553,141947,W,L,W 10-4 vs. San Francisco Giants,L 4-10 @ Los Angeles Dodgers,regular,0
 SDN202609190,2026,2026,2026-09-19,Miami Marlins,San Diego Padres,6,7,-1,1,0,1,0,12553,141948,W,L,W 7-6 vs. Miami Marlins,L 6-7 @ San Diego Padres,regular,0
 ARI202609190,2026,2026,2026-09-19,New York Yankees,Arizona Diamondbacks,3,5,-2,2,0,1,0,12553,141949,W,L,W 5-3 vs. New York Yankees,L 3-5 @ Arizona Diamondbacks,regular,0
-LAA202609190,2026,2026,2026-09-19,Minnesota Twins,Los Angeles Angels,5,6,-1,1,0,1,0,12553,141950,W,L,W 6-5 vs. Minnesota Twins,L 5-6 @ Los Angeles Angels,regular,0
-COL202609190,2026,2026,2026-09-19,Seattle Mariners,Colorado Rockies,3,5,-2,2,0,1,0,12553,141951,W,L,W 5-3 vs. Seattle Mariners,L 3-5 @ Colorado Rockies,regular,0
+COL202609190,2026,2026,2026-09-19,Seattle Mariners,Colorado Rockies,3,5,-2,2,0,1,0,12553,141950,W,L,W 5-3 vs. Seattle Mariners,L 3-5 @ Colorado Rockies,regular,0
+LAA202609190,2026,2026,2026-09-19,Minnesota Twins,Los Angeles Angels,5,6,-1,1,0,1,0,12553,141951,W,L,W 6-5 vs. Minnesota Twins,L 5-6 @ Los Angeles Angels,regular,0
 HOU202609190,2026,2026,2026-09-19,Atlanta Braves,Houston Astros,6,3,3,-3,1,0,0,12553,141952,L,W,L 3-6 vs. Atlanta Braves,W 6-3 @ Houston Astros,regular,0
-NYN202609190,2026,2026,2026-09-19,Philadelphia Phillies,New York Mets,3,10,-7,7,0,1,0,12553,141953,W,L,W 10-3 vs. Philadelphia Phillies,L 3-10 @ New York Mets,regular,0
+CLE202609190,2026,2026,2026-09-19,Las Vegas Athletics,Cleveland Guardians,6,12,-6,6,0,1,0,12553,141953,W,L,W 12-6 vs. Las Vegas Athletics,L 6-12 @ Cleveland Guardians,regular,0
 PIT202609190,2026,2026,2026-09-19,Kansas City Royals,Pittsburgh Pirates,5,6,-1,1,0,1,0,12553,141954,W,L,W 6-5 vs. Kansas City Royals,L 5-6 @ Pittsburgh Pirates,regular,0
 CIN202609190,2026,2026,2026-09-19,Chicago Cubs,Cincinnati Reds,5,2,3,-3,1,0,0,12553,141955,L,W,L 2-5 vs. Chicago Cubs,W 5-2 @ Cincinnati Reds,regular,0
-CLE202609190,2026,2026,2026-09-19,Las Vegas Athletics,Cleveland Guardians,6,12,-6,6,0,1,0,12553,141956,W,L,W 12-6 vs. Las Vegas Athletics,L 6-12 @ Cleveland Guardians,regular,0
+NYN202609190,2026,2026,2026-09-19,Philadelphia Phillies,New York Mets,3,10,-7,7,0,1,0,12553,141956,W,L,W 10-3 vs. Philadelphia Phillies,L 3-10 @ New York Mets,regular,0
 TBA202609190,2026,2026,2026-09-19,Boston Red Sox,Tampa Bay Rays,1,2,-1,1,0,1,0,12553,141957,W,L,W 2-1 vs. Boston Red Sox,L 1-2 @ Tampa Bay Rays,regular,0
 BAL202609190,2026,2026,2026-09-19,Milwaukee Brewers,Baltimore Orioles,1,0,1,-1,1,0,0,12553,141958,L,W,L 0-1 vs. Milwaukee Brewers,W 1-0 @ Baltimore Orioles,regular,0
 CHA202609190,2026,2026,2026-09-19,Detroit Tigers,Chicago White Sox,1,3,-2,2,0,1,0,12553,141959,W,L,W 3-1 vs. Detroit Tigers,L 1-3 @ Chicago White Sox,regular,0
@@ -141977,29 +141977,29 @@ CHA202609200,2026,2026,2026-09-20,Detroit Tigers,Chicago White Sox,1,8,-7,7,0,1,
 DET202609210,2026,2026,2026-09-21,Washington Nationals,Detroit Tigers,2,9,-7,7,0,1,0,12555,141976,W,L,W 9-2 vs. Washington Nationals,L 2-9 @ Detroit Tigers,regular,0
 BAL202609210,2026,2026,2026-09-21,Toronto Blue Jays,Baltimore Orioles,3,4,-1,1,0,1,0,12555,141977,W,L,W 4-3 vs. Toronto Blue Jays,L 3-4 @ Baltimore Orioles,regular,0
 SFN202609210,2026,2026,2026-09-21,Minnesota Twins,San Francisco Giants,2,5,-3,3,0,1,0,12555,141978,W,L,W 5-2 vs. Minnesota Twins,L 2-5 @ San Francisco Giants,regular,0
-COL202609220,2026,2026,2026-09-22,Arizona Diamondbacks,Colorado Rockies,7,2,5,-5,1,0,0,12556,141979,L,W,L 2-7 vs. Arizona Diamondbacks,W 7-2 @ Colorado Rockies,regular,0
-ATH202609220,2026,2026,2026-09-22,Los Angeles Angels,Las Vegas Athletics,7,9,-2,2,0,1,0,12556,141980,W,L,W 9-7 vs. Los Angeles Angels,L 7-9 @ Las Vegas Athletics,regular,0
-TEX202609220,2026,2026,2026-09-22,New York Mets,Texas Rangers,6,3,3,-3,1,0,0,12556,141981,L,W,L 3-6 vs. New York Mets,W 6-3 @ Texas Rangers,regular,0
+TEX202609220,2026,2026,2026-09-22,New York Mets,Texas Rangers,6,3,3,-3,1,0,0,12556,141979,L,W,L 3-6 vs. New York Mets,W 6-3 @ Texas Rangers,regular,0
+COL202609220,2026,2026,2026-09-22,Arizona Diamondbacks,Colorado Rockies,7,2,5,-5,1,0,0,12556,141980,L,W,L 2-7 vs. Arizona Diamondbacks,W 7-2 @ Colorado Rockies,regular,0
+CHN202609220,2026,2026,2026-09-22,Miami Marlins,Chicago Cubs,8,2,6,-6,1,0,0,12556,141981,L,W,L 2-8 vs. Miami Marlins,W 8-2 @ Chicago Cubs,regular,0
 SFN202609220,2026,2026,2026-09-22,Minnesota Twins,San Francisco Giants,3,2,1,-1,1,0,0,12556,141982,L,W,L 2-3 vs. Minnesota Twins,W 3-2 @ San Francisco Giants,regular,0
 LAN202609220,2026,2026,2026-09-22,San Diego Padres,Los Angeles Dodgers,0,7,-7,7,0,1,0,12556,141983,W,L,W 7-0 vs. San Diego Padres,L 0-7 @ Los Angeles Dodgers,regular,0
-SEA202609220,2026,2026,2026-09-22,Houston Astros,Seattle Mariners,7,0,7,-7,1,0,0,12556,141984,L,W,L 0-7 vs. Houston Astros,W 7-0 @ Seattle Mariners,regular,0
-CHN202609220,2026,2026,2026-09-22,Miami Marlins,Chicago Cubs,8,2,6,-6,1,0,0,12556,141985,L,W,L 2-8 vs. Miami Marlins,W 8-2 @ Chicago Cubs,regular,0
-BOS202609220,2026,2026,2026-09-22,Cleveland Guardians,Boston Red Sox,3,2,1,-1,1,0,0,12556,141986,L,W,L 2-3 vs. Cleveland Guardians,W 3-2 @ Boston Red Sox,regular,0
-ATL202609220,2026,2026,2026-09-22,Cincinnati Reds,Atlanta Braves,4,0,4,-4,1,0,0,12556,141987,L,W,L 0-4 vs. Cincinnati Reds,W 4-0 @ Atlanta Braves,regular,0
+ATH202609220,2026,2026,2026-09-22,Los Angeles Angels,Las Vegas Athletics,7,9,-2,2,0,1,0,12556,141984,W,L,W 9-7 vs. Los Angeles Angels,L 7-9 @ Las Vegas Athletics,regular,0
+KCA202609220,2026,2026,2026-09-22,Chicago White Sox,Kansas City Royals,14,11,3,-3,1,0,0,12556,141985,L,W,L 11-14 vs. Chicago White Sox,W 14-11 @ Kansas City Royals,regular,0
+SEA202609220,2026,2026,2026-09-22,Houston Astros,Seattle Mariners,7,0,7,-7,1,0,0,12556,141986,L,W,L 0-7 vs. Houston Astros,W 7-0 @ Seattle Mariners,regular,0
+BOS202609220,2026,2026,2026-09-22,Cleveland Guardians,Boston Red Sox,3,2,1,-1,1,0,0,12556,141987,L,W,L 2-3 vs. Cleveland Guardians,W 3-2 @ Boston Red Sox,regular,0
 PHI202609220,2026,2026,2026-09-22,Milwaukee Brewers,Philadelphia Phillies,4,6,-2,2,0,1,0,12556,141988,W,L,W 6-4 vs. Milwaukee Brewers,L 4-6 @ Philadelphia Phillies,regular,0
 PIT202609220,2026,2026,2026-09-22,St. Louis Cardinals,Pittsburgh Pirates,0,2,-2,2,0,1,0,12556,141989,W,L,W 2-0 vs. St. Louis Cardinals,L 0-2 @ Pittsburgh Pirates,regular,0
 DET202609220,2026,2026,2026-09-22,Washington Nationals,Detroit Tigers,3,1,2,-2,1,0,0,12556,141990,L,W,L 1-3 vs. Washington Nationals,W 3-1 @ Detroit Tigers,regular,0
 NYA202609222,2026,2026,2026-09-22,Tampa Bay Rays,New York Yankees,6,1,5,-5,1,0,0,12556,141991,L,W,L 1-6 vs. Tampa Bay Rays,W 6-1 @ New York Yankees,regular,0
 NYA202609221,2026,2026,2026-09-22,Tampa Bay Rays,New York Yankees,0,2,-2,2,0,1,0,12556,141992,W,L,W 2-0 vs. Tampa Bay Rays,L 0-2 @ New York Yankees,regular,0
-KCA202609220,2026,2026,2026-09-22,Chicago White Sox,Kansas City Royals,14,11,3,-3,1,0,0,12556,141993,L,W,L 11-14 vs. Chicago White Sox,W 14-11 @ Kansas City Royals,regular,0
+ATL202609220,2026,2026,2026-09-22,Cincinnati Reds,Atlanta Braves,4,0,4,-4,1,0,0,12556,141993,L,W,L 0-4 vs. Cincinnati Reds,W 4-0 @ Atlanta Braves,regular,0
 SEA202609230,2026,2026,2026-09-23,Houston Astros,Seattle Mariners,5,6,-1,1,0,1,0,12557,141994,W,L,W 6-5 vs. Houston Astros,L 5-6 @ Seattle Mariners,regular,0
-LAN202609230,2026,2026,2026-09-23,San Diego Padres,Los Angeles Dodgers,5,1,4,-4,1,0,0,12557,141995,L,W,L 1-5 vs. San Diego Padres,W 5-1 @ Los Angeles Dodgers,regular,0
-ATH202609230,2026,2026,2026-09-23,Los Angeles Angels,Las Vegas Athletics,3,7,-4,4,0,1,0,12557,141996,W,L,W 7-3 vs. Los Angeles Angels,L 3-7 @ Las Vegas Athletics,regular,0
-COL202609230,2026,2026,2026-09-23,Arizona Diamondbacks,Colorado Rockies,5,3,2,-2,1,0,0,12557,141997,L,W,L 3-5 vs. Arizona Diamondbacks,W 5-3 @ Colorado Rockies,regular,0
-TEX202609230,2026,2026,2026-09-23,New York Mets,Texas Rangers,7,2,5,-5,1,0,0,12557,141998,L,W,L 2-7 vs. New York Mets,W 7-2 @ Texas Rangers,regular,0
-CHN202609230,2026,2026,2026-09-23,Miami Marlins,Chicago Cubs,3,2,1,-1,1,0,0,12557,141999,L,W,L 2-3 vs. Miami Marlins,W 3-2 @ Chicago Cubs,regular,0
-KCA202609230,2026,2026,2026-09-23,Chicago White Sox,Kansas City Royals,4,5,-1,1,0,1,0,12557,142000,W,L,W 5-4 vs. Chicago White Sox,L 4-5 @ Kansas City Royals,regular,0
-ATL202609230,2026,2026,2026-09-23,Cincinnati Reds,Atlanta Braves,2,3,-1,1,0,1,0,12557,142001,W,L,W 3-2 vs. Cincinnati Reds,L 2-3 @ Atlanta Braves,regular,0
+ATH202609230,2026,2026,2026-09-23,Los Angeles Angels,Las Vegas Athletics,3,7,-4,4,0,1,0,12557,141995,W,L,W 7-3 vs. Los Angeles Angels,L 3-7 @ Las Vegas Athletics,regular,0
+COL202609230,2026,2026,2026-09-23,Arizona Diamondbacks,Colorado Rockies,5,3,2,-2,1,0,0,12557,141996,L,W,L 3-5 vs. Arizona Diamondbacks,W 5-3 @ Colorado Rockies,regular,0
+TEX202609230,2026,2026,2026-09-23,New York Mets,Texas Rangers,7,2,5,-5,1,0,0,12557,141997,L,W,L 2-7 vs. New York Mets,W 7-2 @ Texas Rangers,regular,0
+CHN202609230,2026,2026,2026-09-23,Miami Marlins,Chicago Cubs,3,2,1,-1,1,0,0,12557,141998,L,W,L 2-3 vs. Miami Marlins,W 3-2 @ Chicago Cubs,regular,0
+KCA202609230,2026,2026,2026-09-23,Chicago White Sox,Kansas City Royals,4,5,-1,1,0,1,0,12557,141999,W,L,W 5-4 vs. Chicago White Sox,L 4-5 @ Kansas City Royals,regular,0
+ATL202609230,2026,2026,2026-09-23,Cincinnati Reds,Atlanta Braves,2,3,-1,1,0,1,0,12557,142000,W,L,W 3-2 vs. Cincinnati Reds,L 2-3 @ Atlanta Braves,regular,0
+LAN202609230,2026,2026,2026-09-23,San Diego Padres,Los Angeles Dodgers,5,1,4,-4,1,0,0,12557,142001,L,W,L 1-5 vs. San Diego Padres,W 5-1 @ Los Angeles Dodgers,regular,0
 NYA202609230,2026,2026,2026-09-23,Tampa Bay Rays,New York Yankees,2,9,-7,7,0,1,0,12557,142002,W,L,W 9-2 vs. Tampa Bay Rays,L 2-9 @ New York Yankees,regular,0
 PHI202609230,2026,2026,2026-09-23,Milwaukee Brewers,Philadelphia Phillies,4,1,3,-3,1,0,0,12557,142003,L,W,L 1-4 vs. Milwaukee Brewers,W 4-1 @ Philadelphia Phillies,regular,0
 PIT202609230,2026,2026,2026-09-23,St. Louis Cardinals,Pittsburgh Pirates,5,1,4,-4,1,0,0,12557,142004,L,W,L 1-5 vs. St. Louis Cardinals,W 5-1 @ Pittsburgh Pirates,regular,0
@@ -142008,35 +142008,35 @@ BAL202609232,2026,2026,2026-09-23,Toronto Blue Jays,Baltimore Orioles,2,4,-2,2,0
 BAL202609231,2026,2026,2026-09-23,Toronto Blue Jays,Baltimore Orioles,2,4,-2,2,0,1,0,12557,142007,W,L,W 4-2 vs. Toronto Blue Jays,L 2-4 @ Baltimore Orioles,regular,0
 DET202609230,2026,2026,2026-09-23,Washington Nationals,Detroit Tigers,4,2,2,-2,1,0,0,12557,142008,L,W,L 2-4 vs. Washington Nationals,W 4-2 @ Detroit Tigers,regular,0
 BOS202609230,2026,2026,2026-09-23,Cleveland Guardians,Boston Red Sox,0,1,-1,1,0,1,0,12557,142009,W,L,W 1-0 vs. Cleveland Guardians,L 0-1 @ Boston Red Sox,regular,0
-NYA202609240,2026,2026,2026-09-24,Tampa Bay Rays,New York Yankees,4,6,-2,2,0,1,0,12558,142010,W,L,W 6-4 vs. Tampa Bay Rays,L 4-6 @ New York Yankees,regular,0
+LAN202609240,2026,2026,2026-09-24,San Diego Padres,Los Angeles Dodgers,4,2,2,-2,1,0,0,12558,142010,L,W,L 2-4 vs. San Diego Padres,W 4-2 @ Los Angeles Dodgers,regular,0
 SEA202609240,2026,2026,2026-09-24,Los Angeles Angels,Seattle Mariners,6,4,2,-2,1,0,0,12558,142011,L,W,L 4-6 vs. Los Angeles Angels,W 6-4 @ Seattle Mariners,regular,0
 ATH202609240,2026,2026,2026-09-24,Houston Astros,Las Vegas Athletics,7,5,2,-2,1,0,0,12558,142012,L,W,L 5-7 vs. Houston Astros,W 7-5 @ Las Vegas Athletics,regular,0
 ATL202609240,2026,2026,2026-09-24,Cincinnati Reds,Atlanta Braves,7,6,1,-1,1,0,0,12558,142013,L,W,L 6-7 vs. Cincinnati Reds,W 7-6 @ Atlanta Braves,regular,0
-BOS202609240,2026,2026,2026-09-24,Cleveland Guardians,Boston Red Sox,1,0,1,-1,1,0,0,12558,142014,L,W,L 0-1 vs. Cleveland Guardians,W 1-0 @ Boston Red Sox,regular,0
-LAN202609240,2026,2026,2026-09-24,San Diego Padres,Los Angeles Dodgers,4,2,2,-2,1,0,0,12558,142015,L,W,L 2-4 vs. San Diego Padres,W 4-2 @ Los Angeles Dodgers,regular,0
-COL202609240,2026,2026,2026-09-24,Arizona Diamondbacks,Colorado Rockies,12,8,4,-4,1,0,0,12558,142016,L,W,L 8-12 vs. Arizona Diamondbacks,W 12-8 @ Colorado Rockies,regular,0
+NYA202609240,2026,2026,2026-09-24,Tampa Bay Rays,New York Yankees,4,6,-2,2,0,1,0,12558,142014,W,L,W 6-4 vs. Tampa Bay Rays,L 4-6 @ New York Yankees,regular,0
+BOS202609240,2026,2026,2026-09-24,Cleveland Guardians,Boston Red Sox,1,0,1,-1,1,0,0,12558,142015,L,W,L 0-1 vs. Cleveland Guardians,W 1-0 @ Boston Red Sox,regular,0
+PHI202609240,2026,2026,2026-09-24,Milwaukee Brewers,Philadelphia Phillies,5,1,4,-4,1,0,0,12558,142016,L,W,L 1-5 vs. Milwaukee Brewers,W 5-1 @ Philadelphia Phillies,regular,0
 TEX202609240,2026,2026,2026-09-24,New York Mets,Texas Rangers,1,3,-2,2,0,1,0,12558,142017,W,L,W 3-1 vs. New York Mets,L 1-3 @ Texas Rangers,regular,0
 CHN202609240,2026,2026,2026-09-24,Miami Marlins,Chicago Cubs,1,2,-1,1,0,1,0,12558,142018,W,L,W 2-1 vs. Miami Marlins,L 1-2 @ Chicago Cubs,regular,0
 KCA202609240,2026,2026,2026-09-24,Chicago White Sox,Kansas City Royals,9,1,8,-8,1,0,0,12558,142019,L,W,L 1-9 vs. Chicago White Sox,W 9-1 @ Kansas City Royals,regular,0
 PIT202609240,2026,2026,2026-09-24,St. Louis Cardinals,Pittsburgh Pirates,1,2,-1,1,0,1,0,12558,142020,W,L,W 2-1 vs. St. Louis Cardinals,L 1-2 @ Pittsburgh Pirates,regular,0
-PHI202609240,2026,2026,2026-09-24,Milwaukee Brewers,Philadelphia Phillies,5,1,4,-4,1,0,0,12558,142021,L,W,L 1-5 vs. Milwaukee Brewers,W 5-1 @ Philadelphia Phillies,regular,0
-SFN202609250,2026,2026,2026-09-25,Los Angeles Dodgers,San Francisco Giants,2,0,2,-2,1,0,0,12559,142022,L,W,L 0-2 vs. Los Angeles Dodgers,W 2-0 @ San Francisco Giants,regular,0
-SDN202609250,2026,2026,2026-09-25,Arizona Diamondbacks,San Diego Padres,11,4,7,-7,1,0,0,12559,142023,L,W,L 4-11 vs. Arizona Diamondbacks,W 11-4 @ San Diego Padres,regular,0
-ATH202609250,2026,2026,2026-09-25,Houston Astros,Las Vegas Athletics,5,6,-1,1,0,1,0,12559,142024,W,L,W 6-5 vs. Houston Astros,L 5-6 @ Las Vegas Athletics,regular,0
-MIN202609250,2026,2026,2026-09-25,Texas Rangers,Minnesota Twins,2,10,-8,8,0,1,0,12559,142025,W,L,W 10-2 vs. Texas Rangers,L 2-10 @ Minnesota Twins,regular,0
-MIL202609250,2026,2026,2026-09-25,St. Louis Cardinals,Milwaukee Brewers,4,8,-4,4,0,1,0,12559,142026,W,L,W 8-4 vs. St. Louis Cardinals,L 4-8 @ Milwaukee Brewers,regular,0
-CHA202609250,2026,2026,2026-09-25,Colorado Rockies,Chicago White Sox,1,6,-5,5,0,1,0,12559,142027,W,L,W 6-1 vs. Colorado Rockies,L 1-6 @ Chicago White Sox,regular,0
-KCA202609250,2026,2026,2026-09-25,Cleveland Guardians,Kansas City Royals,12,9,3,-3,1,0,0,12559,142028,L,W,L 9-12 vs. Cleveland Guardians,W 12-9 @ Kansas City Royals,regular,0
-MIA202609250,2026,2026,2026-09-25,Atlanta Braves,Miami Marlins,0,3,-3,3,0,1,0,12559,142029,W,L,W 3-0 vs. Atlanta Braves,L 0-3 @ Miami Marlins,regular,0
-SEA202609250,2026,2026,2026-09-25,Los Angeles Angels,Seattle Mariners,7,5,2,-2,1,0,0,12559,142030,L,W,L 5-7 vs. Los Angeles Angels,W 7-5 @ Seattle Mariners,regular,0
-WAS202609250,2026,2026,2026-09-25,New York Mets,Washington Nationals,6,7,-1,1,0,1,0,12559,142031,W,L,W 7-6 vs. New York Mets,L 6-7 @ Washington Nationals,regular,0
-PHI202609250,2026,2026,2026-09-25,Tampa Bay Rays,Philadelphia Phillies,2,0,2,-2,1,0,0,12559,142032,L,W,L 0-2 vs. Tampa Bay Rays,W 2-0 @ Philadelphia Phillies,regular,0
-DET202609250,2026,2026,2026-09-25,Pittsburgh Pirates,Detroit Tigers,7,8,-1,1,0,1,0,12559,142033,W,L,W 8-7 vs. Pittsburgh Pirates,L 7-8 @ Detroit Tigers,regular,0
-NYA202609252,2026,2026,2026-09-25,Baltimore Orioles,New York Yankees,3,6,-3,3,0,1,0,12559,142034,W,L,W 6-3 vs. Baltimore Orioles,L 3-6 @ New York Yankees,regular,0
-NYA202609251,2026,2026,2026-09-25,Baltimore Orioles,New York Yankees,10,2,8,-8,1,0,0,12559,142035,L,W,L 2-10 vs. Baltimore Orioles,W 10-2 @ New York Yankees,regular,0
-BOS202609252,2026,2026,2026-09-25,Chicago Cubs,Boston Red Sox,0,2,-2,2,0,1,0,12559,142036,W,L,W 2-0 vs. Chicago Cubs,L 0-2 @ Boston Red Sox,regular,0
-BOS202609251,2026,2026,2026-09-25,Chicago Cubs,Boston Red Sox,3,4,-1,1,0,1,0,12559,142037,W,L,W 4-3 vs. Chicago Cubs,L 3-4 @ Boston Red Sox,regular,0
-TOR202609250,2026,2026,2026-09-25,Cincinnati Reds,Toronto Blue Jays,5,6,-1,1,0,1,0,12559,142038,W,L,W 6-5 vs. Cincinnati Reds,L 5-6 @ Toronto Blue Jays,regular,0
+COL202609240,2026,2026,2026-09-24,Arizona Diamondbacks,Colorado Rockies,12,8,4,-4,1,0,0,12558,142021,L,W,L 8-12 vs. Arizona Diamondbacks,W 12-8 @ Colorado Rockies,regular,0
+CHA202609250,2026,2026,2026-09-25,Colorado Rockies,Chicago White Sox,1,6,-5,5,0,1,0,12559,142022,W,L,W 6-1 vs. Colorado Rockies,L 1-6 @ Chicago White Sox,regular,0
+SFN202609250,2026,2026,2026-09-25,Los Angeles Dodgers,San Francisco Giants,2,0,2,-2,1,0,0,12559,142023,L,W,L 0-2 vs. Los Angeles Dodgers,W 2-0 @ San Francisco Giants,regular,0
+SEA202609250,2026,2026,2026-09-25,Los Angeles Angels,Seattle Mariners,7,5,2,-2,1,0,0,12559,142024,L,W,L 5-7 vs. Los Angeles Angels,W 7-5 @ Seattle Mariners,regular,0
+SDN202609250,2026,2026,2026-09-25,Arizona Diamondbacks,San Diego Padres,11,4,7,-7,1,0,0,12559,142025,L,W,L 4-11 vs. Arizona Diamondbacks,W 11-4 @ San Diego Padres,regular,0
+ATH202609250,2026,2026,2026-09-25,Houston Astros,Las Vegas Athletics,5,6,-1,1,0,1,0,12559,142026,W,L,W 6-5 vs. Houston Astros,L 5-6 @ Las Vegas Athletics,regular,0
+MIN202609250,2026,2026,2026-09-25,Texas Rangers,Minnesota Twins,2,10,-8,8,0,1,0,12559,142027,W,L,W 10-2 vs. Texas Rangers,L 2-10 @ Minnesota Twins,regular,0
+MIL202609250,2026,2026,2026-09-25,St. Louis Cardinals,Milwaukee Brewers,4,8,-4,4,0,1,0,12559,142028,W,L,W 8-4 vs. St. Louis Cardinals,L 4-8 @ Milwaukee Brewers,regular,0
+KCA202609250,2026,2026,2026-09-25,Cleveland Guardians,Kansas City Royals,12,9,3,-3,1,0,0,12559,142029,L,W,L 9-12 vs. Cleveland Guardians,W 12-9 @ Kansas City Royals,regular,0
+BOS202609251,2026,2026,2026-09-25,Chicago Cubs,Boston Red Sox,3,4,-1,1,0,1,0,12559,142030,W,L,W 4-3 vs. Chicago Cubs,L 3-4 @ Boston Red Sox,regular,0
+TOR202609250,2026,2026,2026-09-25,Cincinnati Reds,Toronto Blue Jays,5,6,-1,1,0,1,0,12559,142031,W,L,W 6-5 vs. Cincinnati Reds,L 5-6 @ Toronto Blue Jays,regular,0
+WAS202609250,2026,2026,2026-09-25,New York Mets,Washington Nationals,6,7,-1,1,0,1,0,12559,142032,W,L,W 7-6 vs. New York Mets,L 6-7 @ Washington Nationals,regular,0
+PHI202609250,2026,2026,2026-09-25,Tampa Bay Rays,Philadelphia Phillies,2,0,2,-2,1,0,0,12559,142033,L,W,L 0-2 vs. Tampa Bay Rays,W 2-0 @ Philadelphia Phillies,regular,0
+DET202609250,2026,2026,2026-09-25,Pittsburgh Pirates,Detroit Tigers,7,8,-1,1,0,1,0,12559,142034,W,L,W 8-7 vs. Pittsburgh Pirates,L 7-8 @ Detroit Tigers,regular,0
+NYA202609252,2026,2026,2026-09-25,Baltimore Orioles,New York Yankees,3,6,-3,3,0,1,0,12559,142035,W,L,W 6-3 vs. Baltimore Orioles,L 3-6 @ New York Yankees,regular,0
+NYA202609251,2026,2026,2026-09-25,Baltimore Orioles,New York Yankees,10,2,8,-8,1,0,0,12559,142036,L,W,L 2-10 vs. Baltimore Orioles,W 10-2 @ New York Yankees,regular,0
+BOS202609252,2026,2026,2026-09-25,Chicago Cubs,Boston Red Sox,0,2,-2,2,0,1,0,12559,142037,W,L,W 2-0 vs. Chicago Cubs,L 0-2 @ Boston Red Sox,regular,0
+MIA202609250,2026,2026,2026-09-25,Atlanta Braves,Miami Marlins,0,3,-3,3,0,1,0,12559,142038,W,L,W 3-0 vs. Atlanta Braves,L 0-3 @ Miami Marlins,regular,0
 SEA202609260,2026,2026,2026-09-26,Los Angeles Angels,Seattle Mariners,4,8,-4,4,0,1,0,12560,142039,W,L,W 8-4 vs. Los Angeles Angels,L 4-8 @ Seattle Mariners,regular,0
 ATH202609260,2026,2026,2026-09-26,Houston Astros,Las Vegas Athletics,13,2,11,-11,1,0,0,12560,142040,L,W,L 2-13 vs. Houston Astros,W 13-2 @ Las Vegas Athletics,regular,0
 SDN202609260,2026,2026,2026-09-26,Arizona Diamondbacks,San Diego Padres,7,10,-3,3,0,1,0,12560,142041,W,L,W 10-7 vs. Arizona Diamondbacks,L 7-10 @ San Diego Padres,regular,0
@@ -142050,19 +142050,19 @@ TOR202609260,2026,2026,2026-09-26,Cincinnati Reds,Toronto Blue Jays,5,1,4,-4,1,0
 DET202609260,2026,2026,2026-09-26,Pittsburgh Pirates,Detroit Tigers,3,4,-1,1,0,1,0,12560,142049,W,L,W 4-3 vs. Pittsburgh Pirates,L 3-4 @ Detroit Tigers,regular,0
 WAS202609260,2026,2026,2026-09-26,New York Mets,Washington Nationals,7,1,6,-6,1,0,0,12560,142050,L,W,L 1-7 vs. New York Mets,W 7-1 @ Washington Nationals,regular,0
 KCA202609260,2026,2026,2026-09-26,Cleveland Guardians,Kansas City Royals,11,5,6,-6,1,0,0,12560,142051,L,W,L 5-11 vs. Cleveland Guardians,W 11-5 @ Kansas City Royals,regular,0
-SDN202609270,2026,2026,2026-09-27,Arizona Diamondbacks,San Diego Padres,4,9,-5,5,0,1,0,12561,142052,W,L,W 9-4 vs. Arizona Diamondbacks,L 4-9 @ San Diego Padres,regular,0
-MIL202609270,2026,2026,2026-09-27,St. Louis Cardinals,Milwaukee Brewers,4,6,-2,2,0,1,0,12561,142053,W,L,W 6-4 vs. St. Louis Cardinals,L 4-6 @ Milwaukee Brewers,regular,0
-MIA202609270,2026,2026,2026-09-27,Atlanta Braves,Miami Marlins,3,5,-2,2,0,1,0,12561,142054,W,L,W 5-3 vs. Atlanta Braves,L 3-5 @ Miami Marlins,regular,0
-CHA202609270,2026,2026,2026-09-27,Colorado Rockies,Chicago White Sox,2,4,-2,2,0,1,0,12561,142055,W,L,W 4-2 vs. Colorado Rockies,L 2-4 @ Chicago White Sox,regular,0
-MIN202609270,2026,2026,2026-09-27,Texas Rangers,Minnesota Twins,4,6,-2,2,0,1,0,12561,142056,W,L,W 6-4 vs. Texas Rangers,L 4-6 @ Minnesota Twins,regular,0
-SEA202609270,2026,2026,2026-09-27,Los Angeles Angels,Seattle Mariners,3,7,-4,4,0,1,0,12561,142057,W,L,W 7-3 vs. Los Angeles Angels,L 3-7 @ Seattle Mariners,regular,0
-DET202609270,2026,2026,2026-09-27,Pittsburgh Pirates,Detroit Tigers,4,2,2,-2,1,0,0,12561,142058,L,W,L 2-4 vs. Pittsburgh Pirates,W 4-2 @ Detroit Tigers,regular,0
-WAS202609270,2026,2026,2026-09-27,New York Mets,Washington Nationals,4,6,-2,2,0,1,0,12561,142059,W,L,W 6-4 vs. New York Mets,L 4-6 @ Washington Nationals,regular,0
-TOR202609270,2026,2026,2026-09-27,Cincinnati Reds,Toronto Blue Jays,1,5,-4,4,0,1,0,12561,142060,W,L,W 5-1 vs. Cincinnati Reds,L 1-5 @ Toronto Blue Jays,regular,0
-SFN202609270,2026,2026,2026-09-27,Los Angeles Dodgers,San Francisco Giants,5,1,4,-4,1,0,0,12561,142061,L,W,L 1-5 vs. Los Angeles Dodgers,W 5-1 @ San Francisco Giants,regular,0
-ATH202609270,2026,2026,2026-09-27,Houston Astros,Las Vegas Athletics,9,0,9,-9,1,0,0,12561,142062,L,W,L 0-9 vs. Houston Astros,W 9-0 @ Las Vegas Athletics,regular,0
-BOS202609270,2026,2026,2026-09-27,Chicago Cubs,Boston Red Sox,6,2,4,-4,1,0,0,12561,142063,L,W,L 2-6 vs. Chicago Cubs,W 6-2 @ Boston Red Sox,regular,1
-PHI202609270,2026,2026,2026-09-27,Tampa Bay Rays,Philadelphia Phillies,3,7,-4,4,0,1,0,12561,142064,W,L,W 7-3 vs. Tampa Bay Rays,L 3-7 @ Philadelphia Phillies,regular,0
+MIL202609270,2026,2026,2026-09-27,St. Louis Cardinals,Milwaukee Brewers,4,6,-2,2,0,1,0,12561,142052,W,L,W 6-4 vs. St. Louis Cardinals,L 4-6 @ Milwaukee Brewers,regular,0
+MIA202609270,2026,2026,2026-09-27,Atlanta Braves,Miami Marlins,3,5,-2,2,0,1,0,12561,142053,W,L,W 5-3 vs. Atlanta Braves,L 3-5 @ Miami Marlins,regular,0
+CHA202609270,2026,2026,2026-09-27,Colorado Rockies,Chicago White Sox,2,4,-2,2,0,1,0,12561,142054,W,L,W 4-2 vs. Colorado Rockies,L 2-4 @ Chicago White Sox,regular,0
+MIN202609270,2026,2026,2026-09-27,Texas Rangers,Minnesota Twins,4,6,-2,2,0,1,0,12561,142055,W,L,W 6-4 vs. Texas Rangers,L 4-6 @ Minnesota Twins,regular,0
+SEA202609270,2026,2026,2026-09-27,Los Angeles Angels,Seattle Mariners,3,7,-4,4,0,1,0,12561,142056,W,L,W 7-3 vs. Los Angeles Angels,L 3-7 @ Seattle Mariners,regular,0
+DET202609270,2026,2026,2026-09-27,Pittsburgh Pirates,Detroit Tigers,4,2,2,-2,1,0,0,12561,142057,L,W,L 2-4 vs. Pittsburgh Pirates,W 4-2 @ Detroit Tigers,regular,0
+SDN202609270,2026,2026,2026-09-27,Arizona Diamondbacks,San Diego Padres,4,9,-5,5,0,1,0,12561,142058,W,L,W 9-4 vs. Arizona Diamondbacks,L 4-9 @ San Diego Padres,regular,0
+TOR202609270,2026,2026,2026-09-27,Cincinnati Reds,Toronto Blue Jays,1,5,-4,4,0,1,0,12561,142059,W,L,W 5-1 vs. Cincinnati Reds,L 1-5 @ Toronto Blue Jays,regular,0
+SFN202609270,2026,2026,2026-09-27,Los Angeles Dodgers,San Francisco Giants,5,1,4,-4,1,0,0,12561,142060,L,W,L 1-5 vs. Los Angeles Dodgers,W 5-1 @ San Francisco Giants,regular,0
+ATH202609270,2026,2026,2026-09-27,Houston Astros,Las Vegas Athletics,9,0,9,-9,1,0,0,12561,142061,L,W,L 0-9 vs. Houston Astros,W 9-0 @ Las Vegas Athletics,regular,0
+BOS202609270,2026,2026,2026-09-27,Chicago Cubs,Boston Red Sox,6,2,4,-4,1,0,0,12561,142062,L,W,L 2-6 vs. Chicago Cubs,W 6-2 @ Boston Red Sox,regular,1
+PHI202609270,2026,2026,2026-09-27,Tampa Bay Rays,Philadelphia Phillies,3,7,-4,4,0,1,0,12561,142063,W,L,W 7-3 vs. Tampa Bay Rays,L 3-7 @ Philadelphia Phillies,regular,0
+WAS202609270,2026,2026,2026-09-27,New York Mets,Washington Nationals,4,6,-2,2,0,1,0,12561,142064,W,L,W 6-4 vs. New York Mets,L 4-6 @ Washington Nationals,regular,0
 KCA202609270,2026,2026,2026-09-27,Cleveland Guardians,Kansas City Royals,2,3,-1,1,0,1,0,12561,142065,W,L,W 3-2 vs. Cleveland Guardians,L 2-3 @ Kansas City Royals,regular,0
 ATL202609290,2026,2026,2026-09-29,Philadelphia Phillies,Atlanta Braves,3,5,-2,2,0,1,0,12562,142066,W,L,W 5-3 vs. Philadelphia Phillies,L 3-5 @ Atlanta Braves,wildcard,0
 HOU202609290,2026,2026,2026-09-29,Chicago White Sox,Houston Astros,6,3,3,-3,1,0,0,12562,142067,L,W,L 3-6 vs. Chicago White Sox,W 6-3 @ Houston Astros,wildcard,0
@@ -142088,3 +142088,4 @@ ATL202610070,2026,2026,2026-10-07,Los Angeles Dodgers,Atlanta Braves,4,1,3,-3,1,
 NYA202610070,2026,2026,2026-10-07,Tampa Bay Rays,New York Yankees,4,3,1,-1,1,0,0,12569,142087,L,W,L 3-4 vs. Tampa Bay Rays,W 4-3 @ New York Yankees,divisionseries,0
 SDN202610070,2026,2026,2026-10-07,Milwaukee Brewers,San Diego Padres,3,1,2,-2,1,0,0,12569,142088,L,W,L 1-3 vs. Milwaukee Brewers,W 3-1 @ San Diego Padres,divisionseries,0
 CHA202610080,2026,2026,2026-10-08,Cleveland Guardians,Chicago White Sox,9,5,4,-4,1,0,0,12570,142089,L,W,L 5-9 vs. Cleveland Guardians,W 9-5 @ Chicago White Sox,divisionseries,0
+CLE202610100,2026,2026,2026-10-10,Chicago White Sox,Cleveland Guardians,0,2,-2,2,0,1,0,12571,142090,W,L,W 2-0 vs. Chicago White Sox,L 0-2 @ Cleveland Guardians,divisionseries,0
