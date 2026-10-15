@@ -409,7 +409,10 @@ def prepare_game_data(raw_df):
     df["is_neutral"] = ((site != modal) & (n_at_site <= 9) & (site != "?")).astype(int)
 
     # Sort + dedupe
-    df = df.sort_values("date_game").drop_duplicates(subset=["gid"], keep="first")
+    # gid breaks same-day ties: the default sort isn't stable, so same-day
+    # games came out in a different order (and renumbered unique_game_id)
+    # every run, rewriting the whole CSV daily (2026-10-15).
+    df = df.drop_duplicates(subset=["gid"], keep="first").sort_values(["date_game", "gid"], kind="stable")
 
     # Date IDs
     df["grouped_date_id"] = df.groupby("date_game").ngroup() + 1

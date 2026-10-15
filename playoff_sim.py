@@ -159,7 +159,12 @@ class SeasonSim:
         self.div = np.array([div_of(t, season) for t in self.teams])
         self.A, self.hp = era_params(season)
         rs = rs.assign(h=rs['home'].map(self.idx), a=rs['away'].map(self.idx))
-        self.rs = rs.sort_values('date', kind='stable')
+        # Full content key, not just date: the sim draws random numbers in row
+        # order, so same-day games arriving in a different order reshuffled
+        # every past snapshot's odds daily (2026-10-15). Rows tied on this key
+        # are interchangeable, so the result no longer depends on input order.
+        self.rs = rs.sort_values(['date', 'home', 'away', 'is_neutral', 'home_pts', 'visitor_pts'],
+                                 kind='stable', na_position='last')
         tb = g[g['gametype'] == 'playoff']
         self.tb_wins = {}
         for x in tb.itertuples(index=False):
