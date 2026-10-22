@@ -596,20 +596,24 @@ print(f"  {len(snap_record_lookup):,} (season, team, snapshot) lookups built.")
 # =========================================================
 # WORLD SERIES CHAMPION + RUNNER-UP DETECTION
 # =========================================================
-# Find each season's WS champion (and runner-up) by walking the postseason structurally:
-# the LAST pair of teams to play each other in the postseason is the WS, and whichever
-# of them won more games is the champion. Handles all eras from 1961 (no LCS) through
-# current (LDS/LCS/WS) without per-format hardcoding.
+# Find each season's WS champion (and runner-up) structurally: the World Series is the
+# only postseason round between an AL team and an NL team (every earlier round stays
+# within a league), so the WS is the cross-league pair, and whichever of them won 4
+# games is the champion. Handles all eras from 1961 (no LCS) through current
+# (WC/LDS/LCS/WS). "The last pair to play" is NOT enough: between the LCS clincher
+# and WS Game 1 the last pair is an LCS pair with 4 wins (2026: the Rays were crowned
+# after beating Cleveland in the ALCS).
 
 print("\nDetecting World Series champion + runner-up per season...")
 ws_results = {}  # season -> {'champion': team, 'runner_up': team, 'series': '4-1'}
 for s, rs_end in rs_end_by_season.items():
     s = int(s)
     season_post = games[(games["season"] == s) & (games["date_game"] > rs_end)].copy()
+    # World Series games only: AL vs NL.
+    season_post = season_post[[league(h, s) != league(v, s) for h, v in
+                               zip(season_post["home_team_name"], season_post["visitor_team_name"])]]
     if season_post.empty:
-        continue
-    # Latest game's two teams = WS contestants (almost always - except in 2020 if WS
-    # spanned multiple days, the last game is the clinching game). Use the latest pair.
+        continue  # no WS game played yet
     last_dt = season_post["date_game"].max()
     # All games between those two teams in the postseason = the WS games
     last_games = season_post[season_post["date_game"] == last_dt]
