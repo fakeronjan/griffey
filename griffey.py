@@ -20,6 +20,7 @@ import os
 import zipfile
 from datetime import datetime
 from urllib.request import urlopen
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -284,6 +285,7 @@ def fetch_mlb_stats_api(year, since_date=None):
             }
             rows.append({
                 "gid": gid,
+                "first_pitch": _api_first_pitch(g),
                 "date": int(date_str),
                 "hometeam": home_code,
                 "visteam": away_code,
@@ -301,14 +303,60 @@ def fetch_mlb_stats_api(year, since_date=None):
     return df
 
 
+def _api_first_pitch(g):
+    """MLB Stats API scheduled first pitch (UTC ISO), or None while the time
+    is TBD."""
+    if g.get("status", {}).get("startTimeTBD") or not g.get("gameDate"):
+        return None
+    return pd.Timestamp(g["gameDate"]).tz_convert("UTC").strftime("%Y-%m-%dT%H:%MZ")
+
+
+# Retrosheet start times are the park's local time. Time zone by the city
+# part of the park id (first three letters), 1961 on.
+_PARK_TZ = {
+    **{c: "America/New_York" for c in (
+        "ATL", "BAL", "BOS", "BST", "BUF", "CIN", "CLE", "DET", "DUN", "FTB", "LBV", "MIA",
+        "NYC", "PHI", "PIT", "SJU", "STP", "TAM", "WAS", "WIL")},
+    **{c: "America/Chicago" for c in (
+        "ARL", "BIR", "CHI", "DYE", "HOU", "KAN", "MIL", "MIN", "OMA", "STL")},
+    **{c: "America/Los_Angeles" for c in ("ANA", "LAS", "LOS", "OAK", "SAC", "SAN", "SEA", "SFO")},
+    "DEN": "America/Denver", "PHO": "America/Phoenix", "HON": "Pacific/Honolulu",
+    "MON": "America/Toronto", "TOR": "America/Toronto", "MEX": "America/Mexico_City",
+    "MNT": "America/Monterrey", "LON": "Europe/London", "TOK": "Asia/Tokyo",
+    "SEO": "Asia/Seoul", "SYD": "Australia/Sydney",
+}
+
+
+def _retro_first_pitch(date, starttime, site):
+    """Retrosheet local start ('7:12PM') at park `site` -> UTC ISO, or None
+    (no time listed, '0:00AM' placeholder, or an unmapped park)."""
+    tz = _PARK_TZ.get(str(site)[:3])
+    st = str(starttime).strip().upper()
+    if tz is None or len(st) < 6 or st[-2:] not in ("AM", "PM"):
+        return None
+    try:
+        hh, mm = st[:-2].split(":")
+        h, m = int(hh), int(mm)
+    except ValueError:
+        return None
+    if h == 0 or h > 12:
+        return None
+    local = datetime.strptime(str(int(date)), "%Y%m%d").replace(
+        hour=h % 12 + (12 if st.endswith("PM") else 0), minute=m, tzinfo=ZoneInfo(tz))
+    return pd.Timestamp(local).tz_convert("UTC").strftime("%Y-%m-%dT%H:%MZ")
+
+
 SCHEDULE_CSV = "mlb_schedule.csv"
+_API_GAMETYPE = {"R": "regular", "F": "wildcard", "D": "divisionseries", "L": "lcs", "W": "worldseries"}
 
 
 def fetch_mlb_schedule(year):
-    """Unplayed regular-season games for the rest of `year` (the title-odds
-    sim's remaining schedule) -> SCHEDULE_CSV, in GRIFFEY's team names."""
+    """Unplayed games for the rest of `year` -> SCHEDULE_CSV, in GRIFFEY's
+    team names: the rest of the regular season (the title-odds sim's
+    remaining schedule) and any scheduled postseason games (Daily Matchups'
+    preview), with gametype, game number, and first pitch."""
     today = datetime.now().strftime("%Y-%m-%d")
-    url = f"{STATSAPI_URL}?sportId=1&gameType=R&startDate={today}&endDate={year}-12-31"
+    url = f"{STATSAPI_URL}?sportId=1&gameType=R,F,D,L,W&startDate={today}&endDate={year}-12-31"
     with urlopen(url) as resp:
         data = json.load(resp)
     name_to_code = _name_to_retrosheet_code()
@@ -324,10 +372,15 @@ def fetch_mlb_schedule(year):
             if not h or not a:
                 continue
             rows.append({"date_game": g["officialDate"], "home_team_name": RETROSHEET_TEAM[h],
-                         "visitor_team_name": RETROSHEET_TEAM[a]})
-    df = pd.DataFrame(rows, columns=["date_game", "home_team_name", "visitor_team_name"])
+                         "visitor_team_name": RETROSHEET_TEAM[a],
+                         "gametype": _API_GAMETYPE[g["gameType"]],
+                         "game_number": int(g.get("gameNumber", 1)),
+                         "first_pitch": _api_first_pitch(g)})
+    cols = ["date_game", "home_team_name", "visitor_team_name", "gametype", "game_number", "first_pitch"]
+    df = pd.DataFrame(rows, columns=cols)
     df.to_csv(SCHEDULE_CSV, index=False)
-    print(f"  {len(df)} scheduled regular-season games left in {year} -> {SCHEDULE_CSV}")
+    n_rs = int((df["gametype"] == "regular").sum())
+    print(f"  {n_rs} scheduled regular-season and {len(df) - n_rs} postseason games left in {year} -> {SCHEDULE_CSV}")
     return df
 
 
@@ -408,6 +461,14 @@ def prepare_game_data(raw_df):
     modal = site.groupby(grp).transform(lambda s: s.value_counts().idxmax())
     df["is_neutral"] = ((site != modal) & (n_at_site <= 9) & (site != "?")).astype(int)
 
+    # First pitch (UTC ISO): the MLB Stats API's for current-year games,
+    # Retrosheet's local start time converted by park otherwise.
+    if "starttime" not in df.columns:
+        df["starttime"] = np.nan
+    api_fp = df["first_pitch"] if "first_pitch" in df.columns else pd.Series(np.nan, index=df.index)
+    retro_fp = [_retro_first_pitch(d, t, s) for d, t, s in zip(df["date"], df["starttime"], df["site"])]
+    df["first_pitch"] = api_fp.where(api_fp.notna(), pd.Series(retro_fp, index=df.index, dtype=object))
+
     # Sort + dedupe
     # gid breaks same-day ties: the default sort isn't stable, so same-day
     # games came out in a different order (and renumbered unique_game_id)
@@ -439,7 +500,7 @@ def prepare_game_data(raw_df):
         "grouped_date_id", "unique_game_id",
         "home_wl", "visitor_wl",
         "home_result", "visitor_result",
-        "gametype", "is_neutral",
+        "gametype", "is_neutral", "first_pitch",
     ]
     df = df[out_cols]
     df.to_csv(ALL_GAMES_CSV, index=False)

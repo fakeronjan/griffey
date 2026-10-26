@@ -210,7 +210,9 @@ class SeasonSim:
                 score[self.idx[t]] += 1e6 * (len(order) - k)
         return score
 
-    def odds_at(self, d, n_sims=N_SIMS):
+    def odds_at(self, d, n_sims=N_SIMS, capture=None):
+        """capture: an optional dict filled with per-simulation results (Daily
+        Matchups). Draws no extra random numbers, so the odds are unchanged."""
         season = self.season
         f = fmt(season)
         T = len(self.teams)
@@ -239,6 +241,11 @@ class SeasonSim:
             hp_g = np.where(rest['is_neutral'].to_numpy() == 1, 0.0, hp)   # neutral site: no edge
             ph = ndtr(A * (R[h] - R[a] + hp_g + (0.0 if E is None else E[:, h] - E[:, a])))
             hw_all = (rng.random((n_sims, len(rest))) < ph).astype(np.float32)
+            if capture is not None:
+                capture['rest'] = rest.reset_index(drop=True)
+                capture['hw'] = hw_all.astype(bool)
+                capture['E'] = E
+                capture['W'] = W          # += below is in place: final wins per sim
             Hm = np.zeros((len(rest), T), np.float32); Hm[np.arange(len(rest)), h] = 1
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1
             W += hw_all @ Hm + (1 - hw_all) @ Am
@@ -373,7 +380,15 @@ class SeasonSim:
                     self.seeds[self.teams[t]] = f"{lg[0]}{k + 1}"
         self.matchups = []
         reach = np.zeros((self.n_rounds + 2, T))
+        if capture is not None:
+            # (team_a, team_b, a's result in each sim, best-of, round) for each
+            # fixed series' next game
+            capture['ps_next'] = []
+            capture['teams'] = self.teams
         if season in NO_POSTSEASON:
+            if capture is not None:
+                capture['made'] = np.zeros((n_sims, T), dtype=bool)
+                capture['champ'] = np.full(n_sims, -1)
             cols = ['playoffs'] + [f'r{k}' for k in range(2, self.n_rounds + 1)] + ['champ']
             return with_proj(pd.DataFrame(np.zeros((T, len(cols))), index=self.teams, columns=cols))
         entered = np.zeros((n_sims, T), dtype=bool)
@@ -406,6 +421,8 @@ class SeasonSim:
                               else (a_better if better_hosts else ~a_better))
                     off = 0.0 if E is None else E[sim_ix, a] - E[sim_ix, b]
                     won = rng.random(n_sims) < ndtr(A * (R[a] - R[b] + off + np.where(a_home, edge_h, -edge_h)))
+                    if capture is not None and fixed and gi == len(actual) and max(len(actual) - actual.count(self.teams[a[0]]), actual.count(self.teams[a[0]])) < need:
+                        capture['ps_next'].append((self.teams[a[0]], self.teams[b[0]], won, bo, rnd))
                 live = (wa < need) & (wb < need)
                 wa += won & live; wb += ~won & live
             a_wins = wa >= need
@@ -471,6 +488,9 @@ class SeasonSim:
                 champs[lg] = play(x, y, 3, 7, neutral=True)
         champ = play(champs['AL'], champs['NL'], self.n_rounds, 7, neutral=neutral_late)
         np.add.at(reach[-1], champ, 1)
+        if capture is not None:
+            capture['made'] = entered.copy()      # made the postseason (pennant before 1969)
+            capture['champ'] = champ
         reach /= n_sims
         cols = ['playoffs'] + [f'r{k}' for k in range(2, self.n_rounds + 1)] + ['champ']
         rows = np.vstack([reach[0]] + [reach[k] for k in range(2, self.n_rounds + 1)] + [reach[-1]])
