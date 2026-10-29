@@ -1457,6 +1457,11 @@ _dm_live = int(_dm_unplayed["season"].max()) if len(_dm_unplayed) else None
 _dm_ratings = ratings[["season", "ranking_date", "name", "rating", "rank", "rating_o", "rating_d",
                        "park_factor"]].rename(columns={"ranking_date": "date"})
 _dm_seasons = sorted(int(s) for s in _dm_games["season"].unique() if s >= 1961)
+# Scores as decimals whether or not unplayed games are appended: the matchups cache
+# fingerprints each season by its games' CSV text, and an all-played history reads "2,8"
+# where one with unplayed rows reads "2.0,8.0", which rebuilt every season once the
+# schedule emptied (GRIFFEY after the 2026 World Series).
+_dm_games = _dm_games.astype({c: "float64" for c in ("home_pts", "visitor_pts", "overtimes") if c in _dm_games.columns})
 _dm_all = daily_matchups.build_cached(_dm_seasons, _dm_games, _dm_ratings, _team_league, _div_of)
 _dm_all = {s: d for s, d in _dm_all.items() if d}
 daily_matchups.add_juice(_dm_all, {s for s in _dm_all if s != _dm_live})
